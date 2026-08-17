@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Invoices &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Invoices</h1>
+    <a class="btn btn-primary" href="{{ url_for('invoices.new_invoice') }}">Create Invoice</a>
+</div>
+
+<form class="filter-bar" method="GET">
+    <input type="search" name="q" value="{{ search }}" placeholder="Search invoice, vendor or matter">
+    <select name="status">
+        <option value="">All statuses</option>
+        {% for value in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ value }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-dark" type="submit">Apply Filters</button>
+    <a class="btn btn-light" href="{{ url_for('invoices.list_invoices') }}">Reset</a>
+</form>
+
+<section class="panel">
+    <table class="table">
+        <thead>
+            <tr><th>Invoice Number</th><th>Matter Number</th><th>Matter Name</th><th>Vendor</th>
+                <th>Invoice Date</th><th>Amount</th><th>Currency</th><th>Status</th><th>Submitted</th></tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td><a href="{{ url_for('invoices.invoice_detail', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a></td>
+                <td>{{ invoice.matter.matter_number if invoice.matter else '-' }}</td>
+                <td>{{ invoice.matter.matter_name if invoice.matter else '-' }}</td>
+                <td>{{ invoice.vendor_name }}</td>
+                <td>{{ invoice.invoice_date.strftime('%m/%d/%y') if invoice.invoice_date else '-' }}</td>
+                <td>{{ '%.2f' | format(invoice.amount or 0) }}</td>
+                <td>{{ invoice.currency }}</td>
+                <td>{% with status = invoice.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
+                <td>{{ invoice.submitted_date.strftime('%m/%d/%y') if invoice.submitted_date else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="empty">No invoices match your filters.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/pagination.html" %}
+</section>
+{% endblock %}

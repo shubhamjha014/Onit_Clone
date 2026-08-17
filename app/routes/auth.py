@@ -1,13 +1,20 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 
-from app.services.auth_service import authenticate_user
+from app.services.auth_service import (
+    authenticate_user,
+    current_user,
+    login_user,
+    logout_user,
+)
 
 bp = Blueprint("auth", __name__)
 
 
-@bp.route("/", methods=["GET"])
+@bp.route("/login", methods=["GET"])
 def login_page():
-    return render_template("index.html")
+    if current_user():
+        return redirect(url_for("home.dashboard"))
+    return render_template("auth/login.html")
 
 
 @bp.route("/login", methods=["POST"])
@@ -16,8 +23,17 @@ def login():
     password = request.form.get("password", "")
 
     user = authenticate_user(email, password)
+    if user is None:
+        return render_template(
+            "auth/login.html", error="Invalid email or password", email=email
+        )
 
-    if user:
-        return render_template("success.html", email=user.email)
+    login_user(user)
+    return redirect(url_for("home.dashboard"))
 
-    return render_template("index.html", error="Invalid email or password")
+
+@bp.route("/logout", methods=["POST", "GET"])
+def logout():
+    logout_user()
+    flash("You have been signed out.", "info")
+    return redirect(url_for("auth.login_page"))

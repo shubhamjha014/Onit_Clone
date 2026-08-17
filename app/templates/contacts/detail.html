@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ contact.name }} &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>{{ contact.name }}</h1>
+    <div>
+        <a class="btn btn-light" href="{{ url_for('contacts.list_contacts') }}">Back</a>
+        <a class="btn btn-primary" href="{{ url_for('contacts.edit_contact', contact_id=contact.id) }}">Edit Contact</a>
+    </div>
+</div>
+<section class="panel">
+    <div class="detail-rows">
+        <div><span>Email</span><strong>{{ contact.email }}</strong></div>
+        <div><span>Phone</span><strong>{{ contact.phone or '-' }}</strong></div>
+        <div><span>Organization</span><strong>{{ contact.organization or '-' }}</strong></div>
+        <div><span>Role</span><strong>{{ contact.role or '-' }}</strong></div>
+        <div><span>Contact Type</span><strong>{{ contact.contact_type }}</strong></div>
+        <div><span>Created</span><strong>{{ contact.created_at.strftime('%b %d, %Y') }}</strong></div>
+    </div>
+</section>
+{% endblock %}

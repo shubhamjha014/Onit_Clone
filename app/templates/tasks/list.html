@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Tasks &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Tasks</h1>
+    <a class="btn btn-primary" href="{{ url_for('tasks.new_task') }}">Create Task</a>
+</div>
+
+<form class="filter-bar" method="GET">
+    <input type="search" name="q" value="{{ search }}" placeholder="Search task name">
+    <select name="status">
+        <option value="">All statuses</option>
+        {% for value in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ value }}</option>{% endfor %}
+    </select>
+    <select name="priority">
+        <option value="">All priorities</option>
+        {% for value in priorities %}<option value="{{ value }}" {% if value == priority %}selected{% endif %}>{{ value }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-dark" type="submit">Apply Filters</button>
+    <a class="btn btn-light" href="{{ url_for('tasks.list_tasks') }}">Reset</a>
+</form>
+
+<section class="panel">
+    <table class="table">
+        <thead><tr><th>Task Name</th><th>Related Matter</th><th>Assignee</th><th>Due Date</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{% if task.matter %}<a href="{{ url_for('matters.matter_detail', matter_id=task.matter_id) }}">{{ task.matter.matter_name }}</a>{% else %}-{% endif %}</td>
+                <td>{{ task.assignee.name if task.assignee else '-' }}</td>
+                <td>{{ task.due_date.strftime('%m/%d/%y') if task.due_date else '-' }}</td>
+                <td>{{ task.priority }}</td>
+                <td>{% with status = task.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
+                <td><a href="{{ url_for('tasks.edit_task', task_id=task.id) }}">Edit</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="empty">No tasks match your filters.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/pagination.html" %}
+</section>
+{% endblock %}

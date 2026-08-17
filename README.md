@@ -96,3 +96,9 @@ matters and recent activity are all queried live from PostgreSQL.
 - An invoice contributes to a matter's invoice total unless its status is `Rejected`.
 - Reference data (markets, areas of law, matter types, legal entities, currencies) lives in module-level
   constants rather than lookup tables, to keep the prototype simple.
+
+
+You can now log in with:
+
+demo@example.com
+demo1234

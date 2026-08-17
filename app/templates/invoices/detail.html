@@ -21,6 +21,7 @@
     <aside class="detail-side">
         <section class="side-card">
             <form method="POST" action="{{ url_for('invoices.change_status', invoice_id=invoice.id) }}" class="status-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="status">Invoice Status</label>
                 <select id="status" name="status" onchange="this.form.submit()">
                     {% for value in statuses %}<option value="{{ value }}" {% if value == invoice.status %}selected{% endif %}>{{ value }}</option>{% endfor %}

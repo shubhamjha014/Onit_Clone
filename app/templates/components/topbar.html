@@ -12,7 +12,10 @@
         <div class="user-menu">
             <span class="avatar">{{ current_user.name[0] }}</span>
             <span class="user-name">{{ current_user.name }}</span>
-            <a class="logout" href="{{ url_for('auth.logout') }}">Sign out</a>
+            <form method="POST" action="{{ url_for('auth.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="logout" type="submit">Sign out</button>
+            </form>
         </div>
         {% endif %}
     </div>

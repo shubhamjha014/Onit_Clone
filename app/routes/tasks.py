@@ -77,12 +77,13 @@ def _save_task(task: Task, form) -> bool:
     task.priority = form.get("priority") or "Medium"
     task.status = form.get("status") or "Open"
 
+    is_new = task.id is None
     try:
         db.session.add(task)
         db.session.flush()
         if task.matter:
             log_activity(
-                "Task Updated" if task.id else "Task Created",
+                "Task Created" if is_new else "Task Updated",
                 f"Task '{task.title}' is {task.status}",
                 matter=task.matter,
                 user=current_user(),

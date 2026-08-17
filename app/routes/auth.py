@@ -32,7 +32,7 @@ def login():
     return redirect(url_for("home.dashboard"))
 
 
-@bp.route("/logout", methods=["POST", "GET"])
+@bp.route("/logout", methods=["POST"])
 def logout():
     logout_user()
     flash("You have been signed out.", "info")

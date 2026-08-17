@@ -4,6 +4,7 @@
 <div class="page-head"><h1>{{ 'Edit' if contact else 'Add' }} Contact</h1></div>
 <section class="panel form-panel">
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field"><label for="name">Contact Name <span class="req">*</span></label>
             <input id="name" name="name" value="{{ form.get('name', '') }}" required></div>
         <div class="field"><label for="email">Email <span class="req">*</span></label>

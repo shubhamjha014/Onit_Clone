@@ -4,6 +4,7 @@
 <div class="page-head"><h1>Create Matter</h1></div>
 <section class="panel form-panel">
     <form method="POST" data-loading-text="Creating matter...">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field">
             <label for="matter_manager_id">Matter Manager <span class="req">*</span></label>
             <select id="matter_manager_id" name="matter_manager_id" required>

@@ -67,8 +67,10 @@ python run.py                  # http://127.0.0.1:5000
 
 ## Demo user
 
-`demo@example.com` / `demo1234` (passwords are stored as Werkzeug hashes; the seed user is the only
-account created by default).
+`demo@example.com` / `demo1234` (passwords are stored as Werkzeug hashes). The seed script creates a
+handful of demo accounts that all share this password; change them before exposing the app anywhere.
+Set `SECRET_KEY` in `.env` — without it a random key is generated per process and sessions are dropped
+on restart. All state-changing forms are CSRF-protected via Flask-WTF.
 
 ## The four applications
 

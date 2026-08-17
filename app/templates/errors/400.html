@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel error-panel">
+    <h1>400 &middot; Request could not be verified</h1>
+    <p>Your session expired or the form token was missing. Please sign in again and retry.</p>
+    <a class="btn btn-primary" href="{{ url_for('home.dashboard') }}">Back to Home</a>
+</section>
+{% endblock %}

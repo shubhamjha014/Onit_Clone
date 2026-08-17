@@ -4,6 +4,7 @@
 <div class="page-head"><h1>{{ 'Edit' if task else 'Create' }} Task</h1></div>
 <section class="panel form-panel">
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field"><label for="title">Task Name <span class="req">*</span></label>
             <input id="title" name="title" value="{{ form.get('title', '') }}" required></div>
         <div class="field">

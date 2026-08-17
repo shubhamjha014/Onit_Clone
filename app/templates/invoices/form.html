@@ -4,6 +4,7 @@
 <div class="page-head"><h1>Create Invoice</h1></div>
 <section class="panel form-panel">
     <form method="POST" data-loading-text="Creating invoice...">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field"><label for="invoice_number">Invoice Number <span class="req">*</span></label>
             <input id="invoice_number" name="invoice_number" value="{{ form.get('invoice_number', '') }}" required></div>
         <div class="field">

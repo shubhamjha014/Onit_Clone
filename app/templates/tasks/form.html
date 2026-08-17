@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if task else 'Create' }} Task &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit' if task else 'Create' }} Task</h1></div>
+<section class="panel form-panel">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field"><label for="title">Task Name <span class="req">*</span></label>
+            <input id="title" name="title" value="{{ form.get('title', '') }}" required></div>
+        <div class="field">
+            <label for="matter_id">Related Matter</label>
+            <select id="matter_id" name="matter_id">
+                <option value="">Not linked to a matter</option>
+                {% for matter in matters %}
+                <option value="{{ matter.id }}" {% if form.get('matter_id') | string == matter.id | string %}selected{% endif %}>{{ matter.matter_number }} &mdash; {{ matter.matter_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="assignee_id">Assignee</label>
+            <select id="assignee_id" name="assignee_id">
+                <option value="">Unassigned</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if form.get('assignee_id') | string == user.id | string %}selected{% endif %}>{{ user.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field"><label for="description">Description</label>
+            <textarea id="description" name="description" rows="3">{{ form.get('description', '') or '' }}</textarea></div>
+        <div class="field"><label for="due_date">Due Date</label>
+            <input id="due_date" name="due_date" type="date" value="{{ form.get('due_date').strftime('%Y-%m-%d') if form.get('due_date') and form.get('due_date') is not string else form.get('due_date', '') }}"></div>
+        <div class="field">
+            <label for="priority">Priority</label>
+            <select id="priority" name="priority">
+                {% for value in priorities %}<option value="{{ value }}" {% if form.get('priority') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                {% for value in statuses %}<option value="{{ value }}" {% if form.get('status') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-light" href="{{ url_for('tasks.list_tasks') }}">Cancel</a>
+            <button class="btn btn-primary" type="submit">Save Task</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

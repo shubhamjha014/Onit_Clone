@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Matter Management &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Matter Management</h1>
+    <a class="btn btn-primary" href="{{ url_for('matters.new_matter') }}">Create Matter</a>
+</div>
+
+<form class="filter-bar" method="GET">
+    <input type="search" name="q" value="{{ search }}" placeholder="Search matter name or number">
+    <select name="status">
+        <option value="">All statuses</option>
+        {% for value in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ value }}</option>{% endfor %}
+    </select>
+    <select name="area_of_law">
+        <option value="">All areas of law</option>
+        {% for value in areas_of_law %}<option value="{{ value }}" {% if value == area %}selected{% endif %}>{{ value }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-dark" type="submit">Apply Filters</button>
+    <a class="btn btn-light" href="{{ url_for('matters.list_matters') }}">Reset</a>
+</form>
+
+<section class="panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Matter Number</th><th>Matter Name</th><th>Market</th><th>Area of Law</th>
+                <th>Matter Type</th><th>Matter Manager</th><th>Legal Entity</th><th>Currency</th>
+                <th>Status</th><th>Opened</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for matter in matters %}
+            <tr>
+                <td><a href="{{ url_for('matters.matter_detail', matter_id=matter.id) }}">{{ matter.matter_number }}</a></td>
+                <td>{{ matter.matter_name }}</td>
+                <td>{{ matter.market }}</td>
+                <td>{{ matter.area_of_law }}</td>
+                <td>{{ matter.matter_type }}</td>
+                <td>{{ matter.manager.name if matter.manager else '-' }}</td>
+                <td>{{ matter.legal_entity }}</td>
+                <td>{{ matter.currency }}</td>
+                <td>{% with status = matter.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
+                <td>{{ matter.opened_on.strftime('%m/%d/%y') if matter.opened_on else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="10" class="empty">No matters match your filters.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/pagination.html" %}
+</section>
+{% endblock %}

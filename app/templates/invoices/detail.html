@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ invoice.invoice_number }} &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Invoice {{ invoice.invoice_number }}</h1>
+    <a class="btn btn-light" href="{{ url_for('invoices.list_invoices') }}">Back to Invoices</a>
+</div>
+<div class="detail-layout">
+    <section class="panel detail-main">
+        <div class="detail-rows">
+            <div><span>Vendor</span><strong>{{ invoice.vendor_name }}</strong></div>
+            <div><span>Matter</span><strong>
+                {% if invoice.matter %}<a href="{{ url_for('matters.matter_detail', matter_id=invoice.matter_id) }}">{{ invoice.matter.matter_number }} &mdash; {{ invoice.matter.matter_name }}</a>{% else %}-{% endif %}
+            </strong></div>
+            <div><span>Invoice Date</span><strong>{{ invoice.invoice_date.strftime('%m/%d/%y') if invoice.invoice_date else '-' }}</strong></div>
+            <div><span>Amount</span><strong>{{ '%.2f' | format(invoice.amount or 0) }} {{ invoice.currency }}</strong></div>
+            <div><span>Submitted</span><strong>{{ invoice.submitted_date.strftime('%m/%d/%y') if invoice.submitted_date else '-' }}</strong></div>
+            <div><span>Description</span><strong>{{ invoice.description or '-' }}</strong></div>
+        </div>
+    </section>
+    <aside class="detail-side">
+        <section class="side-card">
+            <form method="POST" action="{{ url_for('invoices.change_status', invoice_id=invoice.id) }}" class="status-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="status">Invoice Status</label>
+                <select id="status" name="status" onchange="this.form.submit()">
+                    {% for value in statuses %}<option value="{{ value }}" {% if value == invoice.status %}selected{% endif %}>{{ value }}</option>{% endfor %}
+                </select>
+            </form>
+        </section>
+    </aside>
+</div>
+{% endblock %}

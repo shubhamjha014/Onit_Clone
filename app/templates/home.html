@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Home &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="card-grid">
+    {% set items = [
+        ('&#10003;&#10003;', cards.pending_tasks, 'My Pending Tasks', url_for('tasks.list_tasks', status='Open')),
+        ('&#128100;', cards.pending_approvals, 'My Pending Approvals', url_for('invoices.list_invoices', status='Pending Approval')),
+        ('&#128193;', cards.open_matters, 'My Open Matters', url_for('matters.list_matters')),
+        ('&#128206;', cards.pending_invoices, 'My Pending Invoices', url_for('invoices.list_invoices'))
+    ] %}
+    {% for icon, count, label, link in items %}
+    <div class="stat-card">
+        <div class="stat-top">
+            <span class="stat-icon">{{ icon | safe }}</span>
+            <span class="stat-count">{{ count }}</span>
+        </div>
+        <div class="stat-label">{{ label }}</div>
+        <a class="stat-link" href="{{ link }}">View Details</a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="panel-grid">
+    <section class="panel">
+        <div class="panel-head">
+            <h2>My Newest Matters</h2>
+            <a href="{{ url_for('matters.list_matters') }}">More</a>
+        </div>
+        <table class="table">
+            <thead>
+                <tr><th>Matter Name</th><th>Area of Law</th><th>Matter Manager</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for matter in newest_matters %}
+                <tr>
+                    <td><a href="{{ url_for('matters.matter_detail', matter_id=matter.id) }}">{{ matter.matter_name }}</a></td>
+                    <td>{{ matter.area_of_law }}</td>
+                    <td>{{ matter.manager.name if matter.manager else '&mdash;' | safe }}</td>
+                    <td>{% with status = matter.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="empty">No matters yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Recent Activity</h2>
+        </div>
+        <ul class="activity-list">
+            {% for activity in recent_activity %}
+            <li>
+                <div class="activity-title">
+                    {% if activity.matter %}
+                    <a href="{{ url_for('matters.matter_detail', matter_id=activity.matter_id) }}">{{ activity.matter.matter_name }}</a>
+                    {% else %}General{% endif %}
+                </div>
+                <div class="activity-meta">{{ activity.description }} &middot; {{ activity.created_at.strftime('%b %d, %Y %H:%M') }}</div>
+            </li>
+            {% else %}
+            <li class="empty">No activity recorded yet.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+<header class="topbar">
+    <button class="icon-btn" type="button" data-toggle-sidebar aria-label="Toggle navigation">&#9776;</button>
+    <div class="topbar-brand">
+        <span class="brand-mark">LM</span>
+        <span class="brand-text">{{ app_name }}</span>
+        <span class="env-label">{{ environment_label }}</span>
+    </div>
+    <div class="topbar-actions">
+        <span class="icon-btn" title="Help">?</span>
+        <span class="icon-btn" title="Settings">&#9881;</span>
+        {% if current_user %}
+        <div class="user-menu">
+            <span class="avatar">{{ current_user.name[0] }}</span>
+            <span class="user-name">{{ current_user.name }}</span>
+            <form method="POST" action="{{ url_for('auth.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="logout" type="submit">Sign out</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</header>

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Create Matter &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Create Matter</h1></div>
+<section class="panel form-panel">
+    <form method="POST" data-loading-text="Creating matter...">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+            <label for="matter_manager_id">Matter Manager <span class="req">*</span></label>
+            <select id="matter_manager_id" name="matter_manager_id" required>
+                <option value="">Select a manager</option>
+                {% for user in managers %}
+                <option value="{{ user.id }}" {% if form.get('matter_manager_id') == user.id | string %}selected{% endif %}>{{ user.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="matter_name">Matter Name <span class="req">*</span></label>
+            <input id="matter_name" name="matter_name" value="{{ form.get('matter_name', '') }}" required>
+        </div>
+        <div class="field">
+            <label for="opened_on">Matter Opened On</label>
+            <input id="opened_on" name="opened_on" type="date" value="{{ form.get('opened_on', '') }}">
+        </div>
+        <div class="field">
+            <label for="brief_description">Brief Matter Description</label>
+            <textarea id="brief_description" name="brief_description" rows="3">{{ form.get('brief_description', '') }}</textarea>
+        </div>
+        <div class="field">
+            <label for="market">Market <span class="req">*</span></label>
+            <select id="market" name="market" required>
+                <option value="">Select a market</option>
+                {% for value in markets %}<option value="{{ value }}" {% if form.get('market') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="area_of_law">Area Of Law <span class="req">*</span></label>
+            <select id="area_of_law" name="area_of_law" required>
+                <option value="">Select an area of law</option>
+                {% for value in areas_of_law %}<option value="{{ value }}" {% if form.get('area_of_law') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="region">Region</label>
+            <select id="region" name="region">
+                <option value="">Select a region</option>
+                {% for value in regions %}<option value="{{ value }}" {% if form.get('region') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="matter_type">Matter Type <span class="req">*</span></label>
+            <select id="matter_type" name="matter_type" required>
+                <option value="">Select a matter type</option>
+                {% for value in matter_types %}<option value="{{ value }}" {% if form.get('matter_type') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="legal_entity">Legal Entity <span class="req">*</span></label>
+            <select id="legal_entity" name="legal_entity" required>
+                <option value="">Select a legal entity</option>
+                {% for value in legal_entities %}<option value="{{ value }}" {% if form.get('legal_entity') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="currency">Matter Currency <span class="req">*</span></label>
+            <select id="currency" name="currency" required>
+                {% for value in currencies %}<option value="{{ value }}" {% if form.get('currency') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="payment_method">Payment Method</label>
+            <select id="payment_method" name="payment_method">
+                <option value="">Select a payment method</option>
+                {% for value in payment_methods %}<option value="{{ value }}" {% if form.get('payment_method') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="total_budget">Total Budget</label>
+            <input id="total_budget" name="total_budget" type="number" step="0.01" min="0" value="{{ form.get('total_budget', '0') }}">
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-light" href="{{ url_for('matters.list_matters') }}">Cancel</a>
+            <button class="btn btn-primary" type="submit">Submit Matter</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

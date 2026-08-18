@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-head">
     <h1>Matter Management</h1>
-    <a class="btn btn-primary" href="{{ url_for('matters.new_matter') }}">Create Matter</a>
+
 </div>
 
 <form class="filter-bar" method="GET">
@@ -24,6 +24,19 @@
     <table class="table">
         <thead>
             <tr>
+                <th style="width: 250px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="checkbox" class="bulk-select-all">
+                        <span class="bulk-action-text" style="display: none; font-size: 13px; font-weight: 500; color: var(--primary);"></span>
+                        <div class="dropdown bulk-action-dropdown">
+                            <button class="btn btn-outline btn-sm bulk-action-btn" type="button" disabled>Actions ˅</button>
+                            <div class="dropdown-menu hidden" style="position: absolute; background: white; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 10;">
+                                <a href="#" class="dropdown-item" data-action="export" style="display: block; padding: 6px 16px; color: var(--text);">Export to CSV</a>
+                                <a href="#" class="dropdown-item text-danger" data-action="delete" style="display: block; padding: 6px 16px; color: #e74c3c;">Delete Selected</a>
+                            </div>
+                        </div>
+                    </div>
+                </th>
                 <th>Matter Number</th><th>Matter Name</th><th>Market</th><th>Area of Law</th>
                 <th>Matter Type</th><th>Matter Manager</th><th>Legal Entity</th><th>Currency</th>
                 <th>Status</th><th>Opened</th>
@@ -32,6 +45,7 @@
         <tbody>
             {% for matter in matters %}
             <tr>
+                <td style="text-align: center;"><input type="checkbox" class="bulk-select-row" value="{{ matter.id }}"></td>
                 <td><a href="{{ url_for('matters.matter_detail', matter_id=matter.id) }}">{{ matter.matter_number }}</a></td>
                 <td>{{ matter.matter_name }}</td>
                 <td>{{ matter.market }}</td>
@@ -44,7 +58,7 @@
                 <td>{{ matter.opened_on.strftime('%m/%d/%y') if matter.opened_on else '-' }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="10" class="empty">No matters match your filters.</td></tr>
+            <tr><td colspan="11" class="empty">No matters match your filters.</td></tr>
             {% endfor %}
         </tbody>
     </table>

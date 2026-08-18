@@ -5,6 +5,13 @@ from app.config import Config
 from app.extensions import csrf, db, migrate
 from app.services.auth_service import current_user
 
+from app.models.matter import (
+    AREAS_OF_LAW, CURRENCIES, LEGAL_ENTITIES, MARKETS,
+    MATTER_STATUSES, MATTER_TYPES, PAYMENT_METHODS, REGIONS,
+)
+from app.models.user import User
+
+
 
 def create_app(config_object=Config):
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -20,8 +27,9 @@ def create_app(config_object=Config):
     from app.routes.invoices import bp as invoices_bp
     from app.routes.matters import bp as matters_bp
     from app.routes.tasks import bp as tasks_bp
+    from app.routes.settings import bp as settings_bp
 
-    for blueprint in (auth_bp, home_bp, matters_bp, invoices_bp, contacts_bp, tasks_bp):
+    for blueprint in (auth_bp, home_bp, matters_bp, invoices_bp, contacts_bp, tasks_bp, settings_bp):
         app.register_blueprint(blueprint)
 
     @app.context_processor
@@ -30,6 +38,17 @@ def create_app(config_object=Config):
             "current_user": current_user(),
             "app_name": app.config["APP_NAME"],
             "environment_label": app.config["ENVIRONMENT_LABEL"],
+            "matter_form_choices": {
+                "managers": User.query.order_by(User.name).all() if current_user() else [],
+                "markets": MARKETS,
+                "areas_of_law": AREAS_OF_LAW,
+                "regions": REGIONS,
+                "matter_types": MATTER_TYPES,
+                "legal_entities": LEGAL_ENTITIES,
+                "currencies": CURRENCIES,
+                "statuses": MATTER_STATUSES,
+                "payment_methods": PAYMENT_METHODS,
+            }
         }
 
     @app.errorhandler(CSRFError)

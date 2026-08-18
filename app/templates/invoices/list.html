@@ -19,12 +19,27 @@
 <section class="panel">
     <table class="table">
         <thead>
-            <tr><th>Invoice Number</th><th>Matter Number</th><th>Matter Name</th><th>Vendor</th>
+            <tr>
+                <th style="width: 250px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="checkbox" class="bulk-select-all">
+                        <span class="bulk-action-text" style="display: none; font-size: 13px; font-weight: 500; color: var(--primary);"></span>
+                        <div class="dropdown bulk-action-dropdown">
+                            <button class="btn btn-outline btn-sm bulk-action-btn" type="button" disabled>Actions ˅</button>
+                            <div class="dropdown-menu hidden" style="position: absolute; background: white; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 10;">
+                                <a href="#" class="dropdown-item" data-action="export" style="display: block; padding: 6px 16px; color: var(--text);">Export to CSV</a>
+                                <a href="#" class="dropdown-item text-danger" data-action="delete" style="display: block; padding: 6px 16px; color: #e74c3c;">Delete Selected</a>
+                            </div>
+                        </div>
+                    </div>
+                </th>
+                <th>Invoice Number</th><th>Matter Number</th><th>Matter Name</th><th>Vendor</th>
                 <th>Invoice Date</th><th>Amount</th><th>Currency</th><th>Status</th><th>Submitted</th></tr>
         </thead>
         <tbody>
             {% for invoice in invoices %}
             <tr>
+                <td style="text-align: center;"><input type="checkbox" class="bulk-select-row" value="{{ invoice.id }}"></td>
                 <td><a href="{{ url_for('invoices.invoice_detail', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a></td>
                 <td>{{ invoice.matter.matter_number if invoice.matter else '-' }}</td>
                 <td>{{ invoice.matter.matter_name if invoice.matter else '-' }}</td>
@@ -36,7 +51,7 @@
                 <td>{{ invoice.submitted_date.strftime('%m/%d/%y') if invoice.submitted_date else '-' }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="9" class="empty">No invoices match your filters.</td></tr>
+            <tr><td colspan="10" class="empty">No invoices match your filters.</td></tr>
             {% endfor %}
         </tbody>
     </table>

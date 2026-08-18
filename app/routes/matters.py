@@ -91,80 +91,74 @@ def list_matters():
     )
 
 
-@bp.route("/new", methods=["GET", "POST"])
+@bp.route("/new", methods=["POST"])
 @login_required
 def new_matter():
-    choices = _form_choices()
+    form = request.form
+    required = {
+        "matter_manager_id": "Matter Manager",
+        "matter_name": "Matter Name",
+        "market": "Market",
+        "area_of_law": "Area of Law",
+        "matter_type": "Matter Type",
+        "legal_entity": "Legal Entity",
+        "currency": "Matter Currency",
+    }
+    errors = [
+        f"{label} is required."
+        for field, label in required.items()
+        if not form.get(field, "").strip()
+    ]
 
-    if request.method == "POST":
-        form = request.form
-        required = {
-            "matter_manager_id": "Matter Manager",
-            "matter_name": "Matter Name",
-            "market": "Market",
-            "area_of_law": "Area of Law",
-            "matter_type": "Matter Type",
-            "legal_entity": "Legal Entity",
-            "currency": "Matter Currency",
-        }
-        errors = [
-            f"{label} is required."
-            for field, label in required.items()
-            if not form.get(field, "").strip()
-        ]
+    referrer = request.referrer or url_for("matters.list_matters")
 
-        if errors:
-            for error in errors:
-                flash(error, "error")
-            return render_template(
-                "matters/form.html", form=form, **choices
-            ), 400
+    if errors:
+        for error in errors:
+            flash(error, "error")
+        return redirect(referrer)
 
-        matter = Matter(
-            matter_number=generate_matter_number(),
-            matter_name=form["matter_name"].strip(),
-            matter_manager_id=int(form["matter_manager_id"]),
-            opened_on=_parse_date(form.get("opened_on", "")) or datetime.utcnow().date(),
-            brief_description=form.get("brief_description", "").strip() or None,
-            market=form["market"],
-            area_of_law=form["area_of_law"],
-            region=form.get("region") or None,
-            matter_type=form["matter_type"],
-            legal_entity=form["legal_entity"],
-            currency=form["currency"],
-            payment_method=form.get("payment_method") or None,
-            total_budget=form.get("total_budget") or 0,
-            status="Pending Allocation",
+    matter = Matter(
+        matter_number=generate_matter_number(),
+        matter_name=form["matter_name"].strip(),
+        matter_manager_id=int(form["matter_manager_id"]),
+        opened_on=_parse_date(form.get("opened_on", "")) or datetime.utcnow().date(),
+        brief_description=form.get("brief_description", "").strip() or None,
+        market=form["market"],
+        area_of_law=form["area_of_law"],
+        region=form.get("region") or None,
+        matter_type=form["matter_type"],
+        legal_entity=form["legal_entity"],
+        currency=form["currency"],
+        payment_method=form.get("payment_method") or None,
+        total_budget=form.get("total_budget") or 0,
+        status="Pending Allocation",
+    )
+
+    try:
+        db.session.add(matter)
+        db.session.flush()
+        db.session.add(
+            Participant(
+                matter_id=matter.id,
+                name=current_user().name,
+                email=current_user().email,
+                role="Requester",
+            )
         )
+        log_activity(
+            "Matter Created",
+            f"Matter {matter.matter_number} created",
+            matter=matter,
+            user=current_user(),
+        )
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash("The matter could not be saved. Please try again.", "error")
+        return redirect(referrer)
 
-        try:
-            db.session.add(matter)
-            db.session.flush()
-            db.session.add(
-                Participant(
-                    matter_id=matter.id,
-                    name=current_user().name,
-                    email=current_user().email,
-                    role="Requester",
-                )
-            )
-            log_activity(
-                "Matter Created",
-                f"Matter {matter.matter_number} created",
-                matter=matter,
-                user=current_user(),
-            )
-            db.session.commit()
-        except SQLAlchemyError:
-            db.session.rollback()
-            flash("The matter could not be saved. Please try again.", "error")
-            return render_template("matters/form.html", form=form, **choices), 500
-
-        flash(f"Matter {matter.matter_number} created successfully.", "success")
-        return redirect(url_for("matters.matter_detail", matter_id=matter.id))
-
-    return render_template("matters/form.html", form={}, **choices)
-
+    flash(f"Matter {matter.matter_number} created successfully.", "success")
+    return redirect(url_for("matters.matter_detail", matter_id=matter.id))
 
 @bp.route("/<int:matter_id>")
 @login_required

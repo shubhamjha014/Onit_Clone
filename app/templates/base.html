@@ -9,11 +9,26 @@
 <body>
     {% include "components/topbar.html" %}
     <div class="shell">
-        {% include "components/sidebar.html" %}
+        {% block sidebar %}{% include "components/sidebar.html" %}{% endblock %}
         <main class="content">
             {% include "components/flash_messages.html" %}
             {% block content %}{% endblock %}
         </main>
+    </div>
+
+
+
+
+    {% include "components/create_matter_modal.html" %}
+    <div id="loadingModal" class="modal">
+        <div class="modal-card" style="text-align: center; max-width: 400px; padding: 40px;">
+            <div style="font-size: 40px; color: var(--accent); margin-bottom: 20px;">
+                <!-- Simple CSS spinner -->
+                <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            </div>
+            <h3 style="margin: 0; font-weight: normal;">Creating transaction...</h3>
+        </div>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>

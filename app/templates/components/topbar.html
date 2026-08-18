@@ -6,8 +6,11 @@
         <span class="env-label">{{ environment_label }}</span>
     </div>
     <div class="topbar-actions">
+
+        <button class="btn btn-outline" style="border:none; color:white; background:transparent; font-size:14px;" type="button" data-modal-target="createMatterModal">Launch ˅</button>
         <span class="icon-btn" title="Help">?</span>
-        <span class="icon-btn" title="Settings">&#9881;</span>
+        <a href="{{ url_for('settings.index') }}" class="icon-btn" title="Settings" style="text-decoration:none; color:inherit;">&#9881;</a>
+
         {% if current_user %}
         <div class="user-menu">
             <span class="avatar">{{ current_user.name[0] }}</span>

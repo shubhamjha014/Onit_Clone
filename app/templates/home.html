@@ -4,17 +4,19 @@
 <div class="card-grid">
     {% set items = [
         ('&#10003;&#10003;', cards.pending_tasks, 'My Pending Tasks', url_for('tasks.list_tasks', status='Open')),
-        ('&#128100;', cards.pending_approvals, 'My Pending Approvals', url_for('invoices.list_invoices', status='Pending Approval')),
+        ('&#128100;', cards.pending_approvals, 'My Timekeeper Approvals', url_for('invoices.list_invoices', status='Pending Approval')),
         ('&#128193;', cards.open_matters, 'My Open Matters', url_for('matters.list_matters')),
         ('&#128206;', cards.pending_invoices, 'My Pending Invoices', url_for('invoices.list_invoices'))
     ] %}
     {% for icon, count, label, link in items %}
     <div class="stat-card">
-        <div class="stat-top">
-            <span class="stat-icon">{{ icon | safe }}</span>
-            <span class="stat-count">{{ count }}</span>
+        <div class="stat-content">
+            <div class="stat-top">
+                <span class="stat-icon">{{ icon | safe }}</span>
+                <span class="stat-count">{{ count }}</span>
+            </div>
+            <div class="stat-label">{{ label }}</div>
         </div>
-        <div class="stat-label">{{ label }}</div>
         <a class="stat-link" href="{{ link }}">View Details</a>
     </div>
     {% endfor %}

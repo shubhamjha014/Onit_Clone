@@ -256,3 +256,36 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
     .sidebar { position: absolute; height: 100%; z-index: 15; }
     .content { padding: 16px; }
 }
+
+/* Bulk Toolbar */
+.bulk-toolbar {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2430;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: bottom 0.3s ease-in-out;
+    z-index: 50;
+}
+.bulk-toolbar.active {
+    bottom: 24px;
+}
+.bulk-toolbar .btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+.bulk-toolbar .text-danger {
+    color: #e74c3c;
+}
+
+.hidden {
+    display: none !important;
+}
+.bulk-action-dropdown { position: relative; }

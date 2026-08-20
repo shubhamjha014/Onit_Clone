@@ -3,87 +3,13 @@
 {% block sidebar %}
 <nav id="sidebar" class="sidebar">
     <div class="nav-section">Settings Menu</div>
-    <a class="nav-item active" href="#">General</a>
-    <a class="nav-item" href="#">Users</a>
-    <a class="nav-item" href="#">Lists</a>
+    <a class="nav-item active" href="{{ url_for('settings.index') }}">General</a>
+    <a class="nav-item" href="{{ url_for('settings.users') }}">Users</a>
+    <a class="nav-item" href="{{ url_for('settings.lists') }}">Lists</a>
 </nav>
 {% endblock %}
 
 {% block title %}Settings &middot; {{ app_name }}{% endblock %}
 {% block content %}
-<div class="page-head">
-    <h1>Settings</h1>
-</div>
-
-<div class="panel-grid">
-    <section class="panel">
-        <div class="panel-head">
-            <h2>Users</h2>
-        </div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th style="width: 250px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <input type="checkbox" class="bulk-select-all">
-                            <span class="bulk-action-text" style="display: none; font-size: 13px; font-weight: 500; color: var(--primary);"></span>
-                        <div class="dropdown bulk-action-dropdown">
-                                <button class="btn btn-outline btn-sm bulk-action-btn" type="button" disabled>Actions ˅</button>
-                                <div class="dropdown-menu hidden" style="position: absolute; background: white; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 10;">
-                                    <a href="#" class="dropdown-item" data-action="export" style="display: block; padding: 6px 16px; color: var(--text);">Export to CSV</a>
-                                    <a href="#" class="dropdown-item text-danger" data-action="delete" style="display: block; padding: 6px 16px; color: #e74c3c;">Delete Selected</a>
-                                </div>
-                            </div>
-                        </div>
-                    </th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr>
-                    <td style="text-align: center;"><input type="checkbox" class="bulk-select-row" value="{{ user.id }}"></td>
-                    <td>{{ user.name }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.role }}</td>
-                </tr>
-                {% else %}
-                <tr><td colspan="4" class="empty">No users found.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
-
-    <section class="panel">
-        <div class="panel-head">
-            <h2>Lists</h2>
-        </div>
-        <div class="side-card" style="margin-bottom: 16px;">
-            <h3>Markets</h3>
-            <ul class="side-list">
-                {% for market in matter_form_choices.markets %}
-                <li>{{ market }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="side-card" style="margin-bottom: 16px;">
-            <h3>Areas of Law</h3>
-            <ul class="side-list">
-                {% for aol in matter_form_choices.areas_of_law %}
-                <li>{{ aol }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="side-card" style="margin-bottom: 16px;">
-            <h3>Matter Types</h3>
-            <ul class="side-list">
-                {% for type in matter_form_choices.matter_types %}
-                <li>{{ type }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    </section>
-</div>
+<div class="page-head"><h1>Settings</h1></div>
 {% endblock %}

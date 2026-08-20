@@ -4,134 +4,130 @@ document.addEventListener("click", (event) => {
         document.getElementById(opener.dataset.modalTarget)?.classList.add("open");
         return;
     }
-
     if (event.target.closest("[data-modal-close]")) {
         event.target.closest(".modal")?.classList.remove("open");
         return;
     }
-
     if (event.target.classList.contains("modal")) {
         event.target.classList.remove("open");
         return;
     }
-
     if (event.target.closest("[data-toggle-sidebar]")) {
         document.getElementById("sidebar")?.classList.toggle("collapsed");
     }
 });
 
-// Show a loading state on forms that create records.
 document.querySelectorAll("form[data-loading-text]").forEach((form) => {
     form.addEventListener("submit", () => {
         if (!form.checkValidity()) return;
-
-        // Hide create modal if open
-        const createModal = form.closest('.modal');
-        if (createModal) {
-            createModal.classList.remove('open');
-        }
-
-        // Show loading modal
-        const loadingModal = document.getElementById('loadingModal');
+        form.closest(".modal")?.classList.remove("open");
+        const loadingModal = document.getElementById("loadingModal");
         if (loadingModal) {
-            loadingModal.classList.add('open');
-            const h3 = loadingModal.querySelector('h3');
-            if (h3) {
-                h3.textContent = form.dataset.loadingText;
-            }
+            loadingModal.classList.add("open");
+            const heading = loadingModal.querySelector("h3");
+            if (heading) heading.textContent = form.dataset.loadingText;
         }
-
         const button = form.querySelector("button[type=submit]");
-        if (button) {
-            button.disabled = true;
-            // Removed textContent update so button doesn't visually break
-        }
+        if (button) button.disabled = true;
     });
 });
 
+// Shared selection behaviour for any table that uses the bulk-select classes.
+function getBulkToolbar(table) {
+    return table.dataset.bulkToolbar
+        ? document.querySelector(table.dataset.bulkToolbar)
+        : table;
+}
 
-// Reusable Bulk Selection Logic
 function updateBulkToolbar(table) {
-    if (!table) return;
-    const count = table.querySelectorAll(".bulk-select-row:checked").length;
-
-    const actionBtn = table.querySelector(".bulk-action-btn");
-    if (actionBtn) {
-        if (count > 0) {
-            actionBtn.disabled = false;
-            actionBtn.textContent = `✓ ${count} record${count === 1 ? '' : 's'} selected ˅`;
-        } else {
-            actionBtn.disabled = true;
-            actionBtn.textContent = 'Actions ˅';
-            const textSpan = actionBtn.parentElement.parentElement.querySelector(".bulk-action-text");
-            if (textSpan) {
-                textSpan.style.display = "none";
-            }
-
-            // hide dropdown if open
-            const menu = table.querySelector(".dropdown-menu");
-            if (menu) menu.classList.add("hidden");
-        }
+    const total = table.querySelectorAll(".bulk-select-row").length;
+    const selected = table.querySelectorAll(".bulk-select-row:checked").length;
+    const selectAll = table.querySelector(".bulk-select-all");
+    if (selectAll) {
+        selectAll.checked = total > 0 && selected === total;
+        selectAll.indeterminate = selected > 0 && selected < total;
     }
+
+    const toolbar = getBulkToolbar(table);
+    const actionButton = toolbar?.querySelector(".bulk-action-btn");
+    if (!actionButton) return;
+    const label = toolbar.dataset.bulkActionLabel || "Actions";
+    actionButton.disabled = selected === 0;
+    //actionButton.textContent = selected ? `${label} (${selected}) ˅` : `${label} ˅`;
+    if (!selected) toolbar.querySelector(".dropdown-menu")?.classList.add("hidden");
 }
 
 document.addEventListener("change", (event) => {
+    if (!event.target.matches(".bulk-select-all, .bulk-select-row")) return;
+    const table = event.target.closest("table");
+    if (!table) return;
     if (event.target.classList.contains("bulk-select-all")) {
-        const checked = event.target.checked;
-        const table = event.target.closest('table');
-        if (table) {
-            table.querySelectorAll(".bulk-select-row").forEach((checkbox) => {
-                checkbox.checked = checked;
-            });
-            updateBulkToolbar(table);
-        }
-    } else if (event.target.classList.contains("bulk-select-row")) {
-        const table = event.target.closest('table');
-        if (table) {
-            const allSelect = table.querySelector(".bulk-select-all");
-            if (allSelect) {
-                const total = table.querySelectorAll(".bulk-select-row").length;
-                const checked = table.querySelectorAll(".bulk-select-row:checked").length;
-                allSelect.checked = (total > 0 && checked === total);
-            }
-            updateBulkToolbar(table);
-        }
-    }
-});
-
-document.addEventListener("click", (event) => {
-    // ... existing modal logic ...
-
-    // Dropdown toggle
-    if (event.target.classList.contains("bulk-action-btn")) {
-        const menu = event.target.nextElementSibling;
-        if (menu && menu.classList.contains("dropdown-menu")) {
-            menu.classList.toggle("hidden");
-        }
-    } else if (!event.target.closest(".bulk-action-dropdown")) {
-        // Close all dropdowns if click outside
-        document.querySelectorAll(".dropdown-menu").forEach(menu => {
-            menu.classList.add("hidden");
+        table.querySelectorAll(".bulk-select-row").forEach((checkbox) => {
+            checkbox.checked = event.target.checked;
         });
     }
+    updateBulkToolbar(table);
 });
 
 document.addEventListener("click", (event) => {
-    // Handle bulk action menu items
-    if (event.target.classList.contains("dropdown-item")) {
-        event.preventDefault();
-        const action = event.target.dataset.action;
-        const table = event.target.closest('table');
-        if (table && action) {
-            const selectedIds = Array.from(table.querySelectorAll(".bulk-select-row:checked")).map(cb => cb.value);
-            if (selectedIds.length > 0) {
-                // For now, since APIs aren't requested, we'll just show an alert.
-                // Alternatively, this could be extended to make a real fetch request based on the action.
-                alert(`Triggered action '${action}' for ${selectedIds.length} item(s)`);
-                // Close menu
-                const menu = event.target.closest(".dropdown-menu");
-                if (menu) menu.classList.add("hidden");
-            }
-        }
+    const actionButton = event.target.closest(".bulk-action-btn");
+    if (actionButton) {
+        actionButton.nextElementSibling?.classList.toggle("hidden");
+        return;
     }
+    if (!event.target.closest(".bulk-action-dropdown")) {
+        document.querySelectorAll(".dropdown-menu").forEach((menu) => menu.classList.add("hidden"));
+    }
+});
+
+document.addEventListener("click", (event) => {
+    const deleteItem = event.target.closest("[data-bulk-delete-url]");
+    if (!deleteItem) return;
+    event.preventDefault();
+
+    const toolbar = deleteItem.closest(".bulk-action-dropdown");
+    const table = toolbar?.id
+        ? document.querySelector(`table[data-bulk-toolbar="#${toolbar.id}"]`)
+        : null;
+    const selectedIds = table
+        ? Array.from(table.querySelectorAll(".bulk-select-row:checked"), (checkbox) => checkbox.value)
+        : [];
+    if (!selectedIds.length) return;
+
+    const suffix = selectedIds.length === 1 ? "user" : "users";
+    if (!window.confirm(`Delete selected users? Are you sure you want to delete ${selectedIds.length} selected ${suffix}? This action cannot be undone.`)) {
+        return;
+    }
+
+    const csrfToken = document.getElementById("csrf-token")?.value;
+    if (!csrfToken) {
+        window.alert("Unable to verify this request. Please refresh the page and try again.");
+        return;
+    }
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = deleteItem.dataset.bulkDeleteUrl;
+    const addField = (name, value) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.append(input);
+    };
+    addField("csrf_token", csrfToken);
+    selectedIds.forEach((id) => addField("user_ids", id));
+    document.body.append(form);
+    form.submit();
+});
+
+// Existing list pages can keep adding non-destructive actions while their APIs are built.
+document.addEventListener("click", (event) => {
+    const actionItem = event.target.closest("[data-action]");
+    if (!actionItem) return;
+    event.preventDefault();
+    const table = actionItem.closest("table");
+    const selected = table?.querySelectorAll(".bulk-select-row:checked").length || 0;
+    if (selected) window.alert(`Triggered action '${actionItem.dataset.action}' for ${selected} item(s)`);
+    actionItem.closest(".dropdown-menu")?.classList.add("hidden");
 });

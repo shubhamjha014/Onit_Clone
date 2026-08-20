@@ -1,0 +1,70 @@
+{% extends "settings/index.html" %}
+
+{% block sidebar %}
+<nav id="sidebar" class="sidebar">
+    <div class="nav-section">Settings Menu</div>
+    <a class="nav-item" href="{{ url_for('settings.index') }}">General</a>
+    <a class="nav-item active" href="{{ url_for('settings.users') }}">Users</a>
+    <a class="nav-item" href="{{ url_for('settings.lists') }}">Lists</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-head"><h1>Users</h1></div>
+<div class="users-table-actions">
+    <div id="users-bulk-actions" class="dropdown bulk-action-dropdown" data-bulk-action-label="Action">
+        <button class="btn btn-sm bulk-action-btn users-action-btn" type="button" disabled>Action</button>
+        <div class="dropdown-menu hidden">
+            <a href="#" class="dropdown-item text-danger" data-bulk-delete-url="{{ url_for('settings.bulk_delete_users') }}">Delete</a>
+        </div>
+    </div>
+    <button class="btn btn-primary" type="button" data-modal-target="addUserModal">Add User</button>
+</div>
+<section class="panel">
+    <input id="csrf-token" type="hidden" value="{{ csrf_token() }}">
+    <table class="table" data-bulk-toolbar="#users-bulk-actions">
+        <thead><tr>
+            <th class="selection-column"><input type="checkbox" class="bulk-select-all" aria-label="Select all users"></th>
+            <th>Name</th><th>Email</th>
+        </tr></thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td class="selection-column"><input type="checkbox" class="bulk-select-row" value="{{ user.id }}" aria-label="Select {{ user.name }}"></td>
+                <td>{{ user.name }}</td><td>{{ user.email }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="empty">No users found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<div id="addUserModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h2>Add User</h2>
+            <button class="icon-btn" type="button" data-modal-close aria-label="Close">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('settings.create_user') }}" data-loading-text="Creating user...">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label for="user-name">User Name <span class="req">*</span></label>
+                <input id="user-name" name="name" maxlength="120" autocomplete="name" required>
+            </div>
+            <div class="field">
+                <label for="user-email">Email <span class="req">*</span></label>
+                <input id="user-email" name="email" type="email" maxlength="255" autocomplete="email" required>
+            </div>
+            <div class="field">
+                <label for="user-password">Password <span class="req">*</span></label>
+                <input id="user-password" name="password" type="password" minlength="8" autocomplete="new-password" required>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
+                <button class="btn btn-primary" type="submit">Add User</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

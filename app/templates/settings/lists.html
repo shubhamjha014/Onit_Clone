@@ -1,0 +1,30 @@
+{% extends "settings/index.html" %}
+
+{% block sidebar %}
+<nav id="sidebar" class="sidebar">
+    <div class="nav-section">Settings Menu</div>
+    <a class="nav-item" href="{{ url_for('settings.index') }}">General</a>
+    <a class="nav-item" href="{{ url_for('settings.users') }}">Users</a>
+    <a class="nav-item active" href="{{ url_for('settings.lists') }}">Lists</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-head"><h1>Lists</h1></div>
+<div class="panel-grid">
+    <section class="panel">
+        <div class="side-card" style="margin-bottom: 16px;">
+            <h3>Markets</h3>
+            <ul class="side-list">{% for market in matter_form_choices.markets %}<li>{{ market }}</li>{% endfor %}</ul>
+        </div>
+        <div class="side-card" style="margin-bottom: 16px;">
+            <h3>Areas of Law</h3>
+            <ul class="side-list">{% for area in matter_form_choices.areas_of_law %}<li>{{ area }}</li>{% endfor %}</ul>
+        </div>
+        <div class="side-card">
+            <h3>Matter Types</h3>
+            <ul class="side-list">{% for matter_type in matter_form_choices.matter_types %}<li>{{ matter_type }}</li>{% endfor %}</ul>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -19,13 +19,13 @@ def login_page():
 
 @bp.route("/login", methods=["POST"])
 def login():
-    email = request.form.get("email", "").strip()
+    identifier = request.form.get("identifier", "").strip()
     password = request.form.get("password", "")
 
-    user = authenticate_user(email, password)
+    user = authenticate_user(identifier, password)
     if user is None:
         return render_template(
-            "auth/login.html", error="Invalid email or password", email=email
+            "auth/login.html", error="Invalid username or password", identifier=identifier
         )
 
     login_user(user)

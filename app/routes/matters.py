@@ -271,3 +271,40 @@ def change_status(matter_id):
     db.session.commit()
     flash(f"Matter status updated to {status}.", "success")
     return redirect(url_for("matters.matter_detail", matter_id=matter.id))
+
+@bp.route("/<int:matter_id>/update", methods=["POST"])
+@login_required
+def update(matter_id):
+    matter = Matter.query.get(matter_id) or abort(404)
+
+    market = request.form.get("market", "").strip()
+    region = request.form.get("region", "").strip()
+    currency = request.form.get("currency", "").strip()
+
+    # Update the matter
+    matter.market = market
+    matter.region = region or None
+    matter.currency = currency
+
+    try:
+        log_activity(
+            "Matter Updated",
+            f"Matter {matter.matter_number} details updated",
+            matter=matter,
+            user=current_user(),
+        )
+
+        db.session.commit()
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash("The matter could not be updated. Please try again.", "error")
+        return redirect(
+            url_for("matters.matter_detail", matter_id=matter.id)
+        )
+
+    flash("Matter details updated successfully.", "success")
+
+    return redirect(
+        url_for("matters.matter_detail", matter_id=matter.id)
+    )

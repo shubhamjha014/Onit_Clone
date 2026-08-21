@@ -131,3 +131,50 @@ document.addEventListener("click", (event) => {
     if (selected) window.alert(`Triggered action '${actionItem.dataset.action}' for ${selected} item(s)`);
     actionItem.closest(".dropdown-menu")?.classList.add("hidden");
 });
+
+// For Hide and show More action button
+document.addEventListener("DOMContentLoaded", function () {
+    const wrapper = document.getElementById("more-actions-btn");
+    const toggle = document.getElementById("more-actions-toggle");
+    const menu = document.getElementById("more-actions-menu");
+
+    toggle.addEventListener("click", function (event) {
+        event.stopPropagation();
+        menu.classList.toggle("show");
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!wrapper.contains(event.target)) {
+            menu.classList.remove("show");
+        }
+    });
+});
+
+// For Edit of an app
+function enableEdit() {
+    document.querySelectorAll('.view-mode').forEach(element => {
+        element.style.display = 'none';
+    });
+
+    document.querySelectorAll('.edit-mode').forEach(element => {
+        element.style.display = 'inline-block';
+    });
+
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.getElementById('updateBtn').style.display = 'inline-block';
+}
+
+function cancelEdit() {
+    document.querySelectorAll('.view-mode').forEach(element => {
+        element.style.display = '';
+    });
+
+    document.querySelectorAll('.edit-mode').forEach(element => {
+        element.style.display = 'none';
+    });
+
+    document.getElementById('editBtn').style.display = 'inline-block';
+    document.getElementById('cancelBtn').style.display = 'none';
+    document.getElementById('updateBtn').style.display = 'none';
+}

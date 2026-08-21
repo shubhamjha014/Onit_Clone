@@ -191,27 +191,203 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
 .flash-info { background: #e7efff; border-color: #c3d6fb; color: #1f51b5; }
 
 /* Matter detail */
-.summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 24px; }
-.summary-grid div, .detail-rows div { display: flex; flex-direction: column; font-size: 14px; }
-.summary-grid span, .detail-rows span { color: var(--muted); font-size: 12px; }
-.detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
-.detail-rows { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 24px; }
-.detail-side { display: flex; flex-direction: column; gap: 10px; }
-.side-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
-.side-card h3 { font-size: 14px; margin: 0 0 8px; }
-.side-card textarea { width: 100%; margin-bottom: 8px; }
-.status-form label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-.status-form select { width: 100%; }
-.side-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-.side-list li { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; }
-.side-list li:last-child { border-bottom: none; }
-.side-list span { color: var(--muted); font-size: 12px; }
-.more-actions summary { cursor: pointer; font-size: 14px; }
-.more-actions a { display: block; padding-top: 8px; font-size: 13px; }
-.activity-list, .comment-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-.activity-list li, .comment-list li { padding: 10px 0; border-bottom: 1px solid var(--border); }
-.activity-meta, .comment-author span { color: var(--muted); font-size: 12px; }
-.comment-author { font-weight: 600; display: flex; gap: 8px; align-items: baseline; }
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 24px;
+}
+
+.summary-grid div {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+}
+
+.summary-grid span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 16px;
+    align-items: start;
+}
+
+/* Details section - one field per row */
+.detail-rows {
+    display: block;
+    padding: 10px 8px 20px 8px;
+}
+
+/* Label on left, value on right */
+.detail-row {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    align-items: center;
+    min-height: 48px;
+    width: 100%;
+}
+
+/* Field label */
+.detail-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+/* Displayed value */
+.detail-row strong {
+    font-weight: 400;
+    color: #333;
+    font-size: 14px;
+    text-align: left;
+}
+
+/* Editable input */
+.edit-mode {
+    width: 350px;
+    max-width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* Bottom-right buttons */
+.detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px 8px 8px;
+}
+
+/* Action buttons */
+.detail-actions button {
+    padding: 6px 12px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+/* Edit button */
+#editBtn {
+    background: #3f6f9f;
+    color: white;
+    border-color: #3f6f9f;
+}
+
+/* Update button */
+#updateBtn {
+    background: #3f6f9f;
+    color: white;
+    border-color: #3f6f9f;
+}
+
+/* Cancel button */
+#cancelBtn {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.detail-side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.side-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.side-card h3 {
+    font-size: 14px;
+    margin: 0 0 8px;
+}
+
+.side-card textarea {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.status-form label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.status-form select {
+    width: 100%;
+}
+
+.side-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+}
+
+.side-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+
+.side-list li:last-child {
+    border-bottom: none;
+}
+
+.side-list span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.more-actions summary {
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.more-actions a {
+    display: block;
+    padding-top: 8px;
+    font-size: 13px;
+}
+
+.activity-list,
+.comment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+}
+
+.activity-list li,
+.comment-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.activity-meta,
+.comment-author span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.comment-author {
+    font-weight: 600;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+}
 
 .pagination { display: flex; align-items: center; gap: 12px; padding-top: 12px; font-size: 13px; }
 .page-info { color: var(--muted); }
@@ -296,3 +472,77 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
 .users-action-btn:disabled { background: #2f6feb; border-color: #2f6feb; color: #fff; }
 .bulk-action-dropdown .dropdown-menu { position: absolute; right: 0; top: calc(100% + 4px); min-width: 120px; background: white; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 10; }
 .bulk-action-dropdown .dropdown-item { display: block; padding: 6px 16px; color: var(--text); text-decoration: none; }
+
+/* Keep the existing More Actions button exactly as it is */
+.more-actions-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* More Action Dropdown */
+.more-actions-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+
+    background: #fff;
+    border: 1px solid #ccc;
+    border-top: none;
+    z-index: 1000;
+    padding: 4px 0;
+}
+
+.more-actions-dropdown.show {
+    display: block;
+}
+
+/* Dropdown items */
+.more-action-item {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 8px 10px;
+
+    color: #333 !important;
+    background: #fff;
+
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: left;
+
+    text-decoration: none !important;
+    border: none;
+}
+
+/* No underline and no blue hyperlink styling */
+.more-action-item:hover,
+.more-action-item:focus,
+.more-action-item:active,
+.more-action-item:visited {
+    color: #333 !important;
+    text-decoration: none !important;
+    background: #f5f5f5;
+}
+
+/* Remove the icons */
+.more-action-item span {
+    display: none;
+}
+
+.btn.btn-outline.btn-block {
+    background-color: #2f6feb;
+    border-color: #2f6feb;
+    color: #fff;
+}
+
+.btn.btn-outline.btn-block:hover,
+.btn.btn-outline.btn-block:focus,
+.btn.btn-outline.btn-block:active {
+    background-color: #2f6feb;
+    border-color: #2f6feb;
+    color: #fff;
+}

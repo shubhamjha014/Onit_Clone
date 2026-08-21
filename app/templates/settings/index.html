@@ -2,6 +2,9 @@
 
 {% block sidebar %}
 <nav id="sidebar" class="sidebar">
+    <a class="nav-item {% if request.blueprint == 'home' %}active{% endif %}" href="{{ url_for('home.dashboard') }}">
+        <span class="nav-icon">&#8962;</span> Home
+    </a>
     <div class="nav-section">Settings Menu</div>
     <a class="nav-item active" href="{{ url_for('settings.index') }}">General</a>
     <a class="nav-item" href="{{ url_for('settings.users') }}">Users</a>
@@ -12,4 +15,7 @@
 {% block title %}Settings &middot; {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head"><h1>Settings</h1></div>
+<div class="detail-rows">
+    <p><b>CSRF : </b>{{ csrf_token() }}</p>
+</div>
 {% endblock %}

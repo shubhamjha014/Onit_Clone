@@ -27,13 +27,101 @@
 <div class="detail-layout">
     <div class="detail-main">
         <section class="panel">
-            <div class="panel-head"><h2>Details</h2></div>
-            <div class="detail-rows">
-                <div><span>Market</span><strong>{{ matter.market }}</strong></div>
-                <div><span>Region</span><strong>{{ matter.region or '-' }}</strong></div>
-                <div><span>Matter Currency</span><strong>{{ matter.currency }}</strong></div>
-                <div><span>Created</span><strong>{{ matter.created_at.strftime('%b %d, %Y %H:%M') }}</strong></div>
+            <div class="panel-head">
+                <h2>Details</h2>
             </div>
+
+            <form method="POST" action="{{ url_for('matters.update', matter_id=matter.id) }}" id="detailsForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="detail-rows">
+
+                    <div class="detail-row">
+                        <span class="detail-label">Market</span>
+
+                        <strong class="view-mode">
+                            {{ matter.market }}
+                        </strong>
+
+                        <input
+                            class="edit-mode"
+                            type="text"
+                            name="market"
+                            value="{{ matter.market }}"
+                            style="display:none;"
+                        >
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">Region</span>
+
+                        <strong class="view-mode">
+                            {{ matter.region or '-' }}
+                        </strong>
+
+                        <input
+                            class="edit-mode"
+                            type="text"
+                            name="region"
+                            value="{{ matter.region or '' }}"
+                            style="display:none;"
+                        >
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">Matter Currency</span>
+
+                        <strong class="view-mode">
+                            {{ matter.currency }}
+                        </strong>
+
+                        <input
+                            class="edit-mode"
+                            type="text"
+                            name="currency"
+                            value="{{ matter.currency }}"
+                            style="display:none;"
+                        >
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">Created</span>
+
+                        <strong>
+                            {{ matter.created_at.strftime('%b %d, %Y %H:%M') }}
+                        </strong>
+                    </div>
+
+                </div>
+
+                <!-- Bottom-right actions -->
+                <div class="detail-actions">
+
+                    <button
+                        type="button"
+                        id="editBtn"
+                        onclick="enableEdit()">
+                        Edit
+                    </button>
+
+                    <button
+                        type="button"
+                        id="cancelBtn"
+                        onclick="cancelEdit()"
+                        style="display:none;">
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="updateBtn"
+                        style="display:none;">
+                        Update
+                    </button>
+
+                </div>
+
+            </form>
         </section>
 
         <section class="panel">
@@ -104,11 +192,31 @@
 
         <button class="btn btn-outline btn-block" data-modal-target="allocation-modal">Add Allocation</button>
         <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button>
-        <details class="side-card more-actions">
-            <summary>More Actions</summary>
-            <a href="{{ url_for('tasks.new_task') }}">Create Task</a>
-            <a href="{{ url_for('invoices.new_invoice') }}">Create Invoice</a>
-        </details>
+
+        <div class="more-actions-wrapper" id="more-actions-btn">
+
+            <button type="button"
+                    class="btn btn-outline btn-block"
+                    id="more-actions-toggle">
+                More Actions
+            </button>
+
+            <div class="more-actions-dropdown" id="more-actions-menu">
+
+                <a href="{{ url_for('tasks.new_task') }}"
+                class="more-action-item">
+                    Create Task
+                </a>
+
+                <a href="{{ url_for('invoices.new_invoice') }}"
+                class="more-action-item">
+                    Create Invoice
+                </a>
+
+            </div>
+
+        </div>
+
 
         <section class="side-card">
             <form method="POST" action="{{ url_for('matters.post_comment', matter_id=matter.id) }}">

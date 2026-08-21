@@ -27,158 +27,154 @@
 <div class="detail-layout">
     <div class="detail-main">
         <section class="panel">
-            <div class="panel-head">
-                <h2>Details</h2>
+            
+            <!-- Tab Navigation Menu -->
+            <div class="tab-navigation">
+                <ul class="nav-tabs" role="tablist">
+                    <li role="presentation">
+                        <a href="#details" role="tab" class="active">Details</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#allocations" role="tab">Allocations ({{ matter.allocations|length }})</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#invoices" role="tab">Invoices ({{ matter.invoices|length }})</a>
+                    </li>
+                    <!-- <li role="presentation">
+                        <a href="#comments" role="tab">Comments ({{ comments|length }})</a>
+                    </li> -->
+                </ul>
             </div>
 
-            <form method="POST" action="{{ url_for('matters.update', matter_id=matter.id) }}" id="detailsForm">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- Tab Content Panes -->
+            <div class="tab-content">
+                
+                <!-- Details Pane -->
+                <div role="tabpanel" class="tab-pane active" id="details">
+                    <form method="POST" action="{{ url_for('matters.update', matter_id=matter.id) }}" id="detailsForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <div class="detail-rows">
+                        <!-- Grid Layout for Form -->
+                        <div class="detail-rows">
+                            
+                            <!-- Row 1 -->
+                            <div class="detail-label">
+                                Market <span class="req">*</span>
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ matter.market }}</strong>
+                                <input class="edit-mode" type="text" name="market" value="{{ matter.market }}" style="display:none;">
+                            </div>
 
-                    <div class="detail-row">
-                        <span class="detail-label">Market</span>
+                            <!-- Row 2 -->
+                            <div class="detail-label">
+                                Region <span class="req">*</span>
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ matter.region or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="region" value="{{ matter.region or '' }}" style="display:none;">
+                            </div>
 
-                        <strong class="view-mode">
-                            {{ matter.market }}
-                        </strong>
+                            <!-- Row 3 -->
+                            <div class="detail-label">
+                                Matter Currency
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ matter.currency }}</strong>
+                                <input class="edit-mode" type="text" name="currency" value="{{ matter.currency }}" style="display:none;">
+                            </div>
 
-                        <input
-                            class="edit-mode"
-                            type="text"
-                            name="market"
-                            value="{{ matter.market }}"
-                            style="display:none;"
-                        >
-                    </div>
+                            <!-- Row 4 -->
+                            <div class="detail-label">
+                                Created
+                            </div>
+                            <div>
+                                <strong>{{ matter.created_at.strftime('%b %d, %Y %H:%M') }}</strong>
+                            </div>
+                        </div>
 
-                    <div class="detail-row">
-                        <span class="detail-label">Region</span>
-
-                        <strong class="view-mode">
-                            {{ matter.region or '-' }}
-                        </strong>
-
-                        <input
-                            class="edit-mode"
-                            type="text"
-                            name="region"
-                            value="{{ matter.region or '' }}"
-                            style="display:none;"
-                        >
-                    </div>
-
-                    <div class="detail-row">
-                        <span class="detail-label">Matter Currency</span>
-
-                        <strong class="view-mode">
-                            {{ matter.currency }}
-                        </strong>
-
-                        <input
-                            class="edit-mode"
-                            type="text"
-                            name="currency"
-                            value="{{ matter.currency }}"
-                            style="display:none;"
-                        >
-                    </div>
-
-                    <div class="detail-row">
-                        <span class="detail-label">Created</span>
-
-                        <strong>
-                            {{ matter.created_at.strftime('%b %d, %Y %H:%M') }}
-                        </strong>
-                    </div>
-
+                        <!-- Bottom-right actions -->
+                        <div class="detail-actions">
+                            <button type="button" id="editBtn" onclick="enableEdit()">Edit</button>
+                            <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+                            <button type="submit" id="updateBtn" style="display:none;">Update</button>
+                        </div>
+                    </form>
                 </div>
 
-                <!-- Bottom-right actions -->
-                <div class="detail-actions">
-
-                    <button
-                        type="button"
-                        id="editBtn"
-                        onclick="enableEdit()">
-                        Edit
-                    </button>
-
-                    <button
-                        type="button"
-                        id="cancelBtn"
-                        onclick="cancelEdit()"
-                        style="display:none;">
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        id="updateBtn"
-                        style="display:none;">
-                        Update
-                    </button>
-
+                <!-- Allocations Pane -->
+                <div role="tabpanel" class="tab-pane" id="allocations" style="display: none;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Percentage</th>
+                                <th>Amount</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for allocation in matter.allocations %}
+                            <tr>
+                                <td>{{ allocation.department }}</td>
+                                <td>{{ allocation.percentage or '-' }}</td>
+                                <td>{{ allocation.amount or '-' }}</td>
+                                <td>{{ allocation.notes or '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="empty">No allocations yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
 
-            </form>
-        </section>
+                <!-- Invoices Pane -->
+                <div role="tabpanel" class="tab-pane" id="invoices" style="display: none;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Invoice Number</th>
+                                <th>Vendor</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in matter.invoices %}
+                            <tr>
+                                <td><a href="{{ url_for('invoices.invoice_detail', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a></td>
+                                <td>{{ invoice.vendor_name }}</td>
+                                <td>{{ '%.2f' | format(invoice.amount or 0) }}</td>
+                                <td>{% with status = invoice.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="empty">No invoices linked to this matter.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-        <section class="panel">
-            <div class="panel-head"><h2>Allocations</h2></div>
-            <table class="table">
-                <thead><tr><th>Department</th><th>Percentage</th><th>Amount</th><th>Notes</th></tr></thead>
-                <tbody>
-                    {% for allocation in matter.allocations %}
-                    <tr>
-                        <td>{{ allocation.department }}</td>
-                        <td>{{ allocation.percentage or '-' }}</td>
-                        <td>{{ allocation.amount or '-' }}</td>
-                        <td>{{ allocation.notes or '-' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="4" class="empty">No allocations yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
+                <!-- Comments Pane 
+                <div role="tabpanel" class="tab-pane" id="comments" style="display: none;">
+                    <ul class="comment-list">
+                        {% for comment in comments %}
+                        <li>
+                            <div class="comment-author">{{ comment.author.name if comment.author else 'Unknown' }}
+                                <span>{{ comment.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+                            </div>
+                            <p>{{ comment.comment_text }}</p>
+                        </li>
+                        {% else %}
+                        <li class="empty">No comments yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>-->
 
-        <section class="panel">
-            <div class="panel-head"><h2>Invoices</h2></div>
-            <table class="table">
-                <thead><tr><th>Invoice Number</th><th>Vendor</th><th>Amount</th><th>Status</th></tr></thead>
-                <tbody>
-                    {% for invoice in matter.invoices %}
-                    <tr>
-                        <td><a href="{{ url_for('invoices.invoice_detail', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a></td>
-                        <td>{{ invoice.vendor_name }}</td>
-                        <td>{{ '%.2f' | format(invoice.amount or 0) }}</td>
-                        <td>{% with status = invoice.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="4" class="empty">No invoices linked to this matter.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
-
-        <section class="panel">
-            <div class="panel-head"><h2>Comments</h2></div>
-            <ul class="comment-list">
-                {% for comment in comments %}
-                <li>
-                    <div class="comment-author">{{ comment.author.name if comment.author else 'Unknown' }}
-                        <span>{{ comment.created_at.strftime('%b %d, %Y %H:%M') }}</span>
-                    </div>
-                    <p>{{ comment.comment_text }}</p>
-                </li>
-                {% else %}
-                <li class="empty">No comments yet.</li>
-                {% endfor %}
-            </ul>
+            </div>
         </section>
     </div>
 
+    <!-- SIDEBAR -->
     <aside class="detail-side">
         <section class="side-card">
             <form method="POST" action="{{ url_for('matters.change_status', matter_id=matter.id) }}" class="status-form">
@@ -194,29 +190,12 @@
         <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button>
 
         <div class="more-actions-wrapper" id="more-actions-btn">
-
-            <button type="button"
-                    class="btn btn-outline btn-block"
-                    id="more-actions-toggle">
-                More Actions
-            </button>
-
+            <button type="button" class="btn btn-outline btn-block" id="more-actions-toggle">More Actions</button>
             <div class="more-actions-dropdown" id="more-actions-menu">
-
-                <a href="{{ url_for('tasks.new_task') }}"
-                class="more-action-item">
-                    Create Task
-                </a>
-
-                <a href="{{ url_for('invoices.new_invoice') }}"
-                class="more-action-item">
-                    Create Invoice
-                </a>
-
+                <a href="{{ url_for('tasks.new_task') }}" class="more-action-item">Create Task</a>
+                <a href="{{ url_for('invoices.new_invoice') }}" class="more-action-item">Create Invoice</a>
             </div>
-
         </div>
-
 
         <section class="side-card">
             <form method="POST" action="{{ url_for('matters.post_comment', matter_id=matter.id) }}">
@@ -250,6 +229,7 @@
     </aside>
 </div>
 
+<!-- MODALS -->
 <div class="modal" id="participant-modal">
     <div class="modal-card">
         <div class="modal-head"><h2>Add Participant</h2><button class="icon-btn" data-modal-close>&times;</button></div>

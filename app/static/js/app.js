@@ -178,3 +178,45 @@ function cancelEdit() {
     document.getElementById('cancelBtn').style.display = 'none';
     document.getElementById('updateBtn').style.display = 'none';
 }
+
+document.querySelectorAll('.nav-tabs a').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('.nav-tabs a').forEach(t => t.classList.remove('active'));
+        // Hide all tab panes
+        document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+        
+        // Add active class to clicked tab
+        this.classList.add('active');
+        // Show the corresponding tab pane
+        const targetId = this.getAttribute('href');
+        document.querySelector(targetId).style.display = 'block';
+    });
+});
+
+// Tab Switching Script
+
+document.addEventListener("DOMContentLoaded", function() {
+    const tabs = document.querySelectorAll('.nav-tabs a');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 1. Remove the "active" class from all tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            
+            // 2. Hide all tab content panes
+            document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+            
+            // 3. Add the "active" class to the clicked tab
+            this.classList.add('active');
+            
+            // 4. Show the corresponding tab pane
+            const targetId = this.getAttribute('href');
+            document.querySelector(targetId).style.display = 'block';
+        });
+    });
+});

@@ -244,7 +244,7 @@ def post_comment(matter_id):
         Comment(matter_id=matter.id, author_id=current_user().id, comment_text=text)
     )
     log_activity(
-        "Comment Posted", "New comment posted", matter=matter, user=current_user()
+        "Comment Posted", text, matter=matter, user=current_user()
     )
     db.session.commit()
     flash("Comment posted.", "success")

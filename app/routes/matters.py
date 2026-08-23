@@ -204,6 +204,7 @@ def add_participant(matter_id):
 @login_required
 def add_allocation(matter_id):
     matter = Matter.query.get(matter_id) or abort(404)
+    
     department = request.form.get("department", "").strip()
 
     if not department:
@@ -219,14 +220,10 @@ def add_allocation(matter_id):
             notes=request.form.get("notes", "").strip() or None,
         )
     )
-    log_activity(
-        "Allocation Added",
-        f"Allocation added for {department}",
-        matter=matter,
-        user=current_user(),
-    )
+    log_activity("Allocation Added", f"Allocation added for {department}", matter=matter, user=current_user())
     db.session.commit()
     flash("Allocation added.", "success")
+    
     return redirect(url_for("matters.matter_detail", matter_id=matter.id))
 
 
@@ -308,3 +305,51 @@ def update(matter_id):
     return redirect(
         url_for("matters.matter_detail", matter_id=matter.id)
     )
+
+@bp.route("/bulk_delete", methods=["POST"])
+@login_required
+def bulk_delete():
+    data = request.get_json()
+    raw_ids = data.get("matter_ids", [])
+    
+    if not raw_ids:
+        return {"error": "No records selected"}, 400
+
+    # THE FIX: Convert the string IDs from the frontend into integers for PostgreSQL
+    matter_ids = [int(mid) for mid in raw_ids]
+
+    try:
+        matters_to_delete = Matter.query.filter(Matter.id.in_(matter_ids)).all()
+        
+        for matter in matters_to_delete:
+            # Manually delete all attached child records first to bypass DB schema locks
+            for participant in matter.participants:
+                db.session.delete(participant)
+            for allocation in matter.allocations:
+                db.session.delete(allocation)
+            for comment in matter.comments:
+                db.session.delete(comment)
+            for activity in matter.activities:
+                db.session.delete(activity)
+            for invoice in matter.invoices:
+                db.session.delete(invoice)
+            for task in matter.tasks:
+                db.session.delete(task)
+                
+            # Now that the matter is completely isolated, delete the matter itself
+            db.session.delete(matter)
+            
+        # Log the bulk action
+        log_activity(
+            "Bulk Delete",
+            f"Deleted {len(matters_to_delete)} matters",
+            user=current_user(),
+        )
+        
+        db.session.commit()
+        return {"success": True, "message": f"{len(matter_ids)} records deleted successfully."}
+    
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"\n--- DATABASE ERROR ---\n{str(e)}\n----------------------\n") 
+        return {"error": "Failed to delete records due to attached data constraints or a database error."}, 500

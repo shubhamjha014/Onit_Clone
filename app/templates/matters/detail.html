@@ -40,9 +40,6 @@
                     <li role="presentation">
                         <a href="#invoices" role="tab">Invoices ({{ matter.invoices|length }})</a>
                     </li>
-                    <!-- <li role="presentation">
-                        <a href="#comments" role="tab">Comments ({{ comments|length }})</a>
-                    </li> -->
                 </ul>
             </div>
 
@@ -154,40 +151,37 @@
                     </table>
                 </div>
 
-                <!-- Comments Pane 
-                <div role="tabpanel" class="tab-pane" id="comments" style="display: none;">
-                    <ul class="comment-list">
-                        {% for comment in comments %}
-                        <li>
-                            <div class="comment-author">{{ comment.author.name if comment.author else 'Unknown' }}
-                                <span>{{ comment.created_at.strftime('%b %d, %Y %H:%M') }}</span>
-                            </div>
-                            <p>{{ comment.comment_text }}</p>
-                        </li>
-                        {% else %}
-                        <li class="empty">No comments yet.</li>
-                        {% endfor %}
-                    </ul>
-                </div>-->
-
             </div>
         </section>
     </div>
 
     <!-- SIDEBAR -->
     <aside class="detail-side">
-        <section class="side-card">
+        <section class="side-card phase-card">
             <form method="POST" action="{{ url_for('matters.change_status', matter_id=matter.id) }}" class="status-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <label for="status">Matter Status</label>
-                <select id="status" name="status" onchange="this.form.submit()">
-                    {% for value in statuses %}<option value="{{ value }}" {% if value == matter.status %}selected{% endif %}>{{ value }}</option>{% endfor %}
-                </select>
+                
+                <div class="phase-select-container">
+                    
+                    <div class="phase-select-text">
+                        <strong>Phase:</strong> {{ matter.status }}
+                    </div>
+                    
+                    <select id="status" name="status" onchange="this.form.submit()" class="phase-select">
+                        {% for value in statuses %}
+                            <option value="{{ value }}" {% if value == matter.status %}selected{% endif %}>
+                                Phase: {{ value }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                </div>
             </form>
         </section>
 
+        <!-- Corrected Allocation Modal Target -->
         <button class="btn btn-outline btn-block" data-modal-target="allocation-modal">Add Allocation</button>
-        <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button>
+        <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button> 
 
         <div class="more-actions-wrapper" id="more-actions-btn">
             <button type="button" class="btn btn-outline btn-block" id="more-actions-toggle">More Actions</button>
@@ -251,20 +245,7 @@
     </div>
 </div>
 
-<div class="modal" id="allocation-modal">
-    <div class="modal-card">
-        <div class="modal-head"><h2>Add Allocation</h2><button class="icon-btn" data-modal-close>&times;</button></div>
-        <form method="POST" action="{{ url_for('matters.add_allocation', matter_id=matter.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="field"><label for="a-department">Department</label><input id="a-department" name="department" required></div>
-            <div class="field"><label for="a-percentage">Percentage</label><input id="a-percentage" name="percentage" type="number" step="0.01" min="0" max="100"></div>
-            <div class="field"><label for="a-amount">Amount</label><input id="a-amount" name="amount" type="number" step="0.01" min="0"></div>
-            <div class="field"><label for="a-notes">Notes</label><textarea id="a-notes" name="notes" rows="3"></textarea></div>
-            <div class="form-actions">
-                <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
-                <button class="btn btn-primary" type="submit">Add Allocation</button>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- Inject the standalone allocation modal file here -->
+{% include "components/create_allocation_modal.html" %}
+
 {% endblock %}

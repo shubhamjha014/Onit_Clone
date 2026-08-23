@@ -213,7 +213,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
 
 /* Updated Tab Container Styles */
 .detail-main {
-    background-color:#ffffff; /* Changed to crisp white */
+    background-color:#ffffff;
     border: 1px solid var(--border);
     border-radius: 4px;
     overflow: hidden;
@@ -227,21 +227,17 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
 }
 
 /* Tab Navigation */
-/* Tab Navigation */
 .tab-navigation {
     background-color: #C7D4DF;
     border-bottom: 1px solid #ccc;
 }
-
 .nav-tabs {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
-    /* Pulls the entire tab row down by exactly 1 pixel to sit on top of the border */
     margin-bottom: -1px; 
 }
-
 .nav-tabs a {
     display: block;
     padding: 12px 20px;
@@ -252,26 +248,20 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
     border-bottom: 1px solid transparent;
     transition: all 0.2s ease;
 }
-
 .nav-tabs a:hover {
     color: #0056b3;
 }
-
 .nav-tabs a.active {
     background-color: #ffffff;
     color: #0056b3;
-    
-    /* Blue underline styling */
     text-decoration: underline;
     text-decoration-color: #0056b3;
     text-decoration-thickness: 2px;
     text-underline-offset: 4px;
-    
-    /* This solid white border now perfectly covers the parent's grey border */
     border-bottom: 1px solid #ffffff; 
 }
 
-/* Details section - Grid updated for flat layout */
+/* Details section */
 .detail-rows {
     display: grid;
     grid-template-columns: 250px 1fr;
@@ -318,25 +308,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
     font-size: 13px;
     border: 1px solid #ccc;
 }
-
-/* Edit button */
-#editBtn {
-    background: #fff;
-    color: #333;
-}
-
-/* Update button - Updated to specific blue */
-#updateBtn {
-    background: #0056b3;
-    color: white;
-    border-color: #004494;
-}
-
-/* Cancel button */
-#cancelBtn {
-    background: #fff;
-    color: #333;
-}
+#editBtn { background: #fff; color: #333; }
+#updateBtn { background: #0056b3; color: white; border-color: #004494; }
+#cancelBtn { background: #fff; color: #333; }
 
 .detail-side { display: flex; flex-direction: column; gap: 10px; }
 .side-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
@@ -400,7 +374,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
 .bulk-action-dropdown .dropdown-menu { position: absolute; right: 0; top: calc(100% + 4px); min-width: 120px; background: white; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 10; }
 .bulk-action-dropdown .dropdown-item { display: block; padding: 6px 16px; color: var(--text); text-decoration: none; }
 
-/* Keep the existing More Actions button exactly as it is */
+/* More Actions Dropdown */
 .more-actions-wrapper { position: relative; width: 100%; }
 .more-actions-dropdown { display: none; position: absolute; top: 100%; left: 0; width: 100%; box-sizing: border-box; background: #fff; border: 1px solid #ccc; border-top: none; z-index: 1000; padding: 4px 0; }
 .more-actions-dropdown.show { display: block; }
@@ -410,122 +384,430 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
 .btn.btn-outline.btn-block { background-color: #2f6feb; border-color: #2f6feb; color: #fff; }
 .btn.btn-outline.btn-block:hover, .btn.btn-outline.btn-block:focus, .btn.btn-outline.btn-block:active { background-color: #2f6feb; border-color: #2f6feb; color: #fff; }
 
-
 /* Generic Form Launch Modal (Reusable Layout) */
-    .launch-modal-card {
-        background: #fff;
-        width: 850px; /* Wide layout matching the image proportions */
-        max-width: 95vw;
-        border-radius: 6px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        margin: 5vh auto;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        font-family: "Segoe UI", Arial, sans-serif;
-    }
+.launch-modal-card {
+    background: #fff;
+    width: 850px; 
+    max-width: 95vw;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 5vh auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+.launch-modal-head {
+    background: #2b2b2b;
+    color: #ffffff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.launch-modal-head h2 { 
+    margin: 0; 
+    font-size: 16px; 
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.launch-modal-head .icon-btn { 
+    color: #ffffff; 
+    background: none; 
+    border: none; 
+    font-size: 22px; 
+    cursor: pointer; 
+}
+.launch-modal-body {
+    background: #ffffff;
+    padding: 30px 50px 40px 50px;
+    overflow-y: auto;
+    max-height: 65vh; 
+}
+.launch-modal-body::-webkit-scrollbar { width: 8px; }
+.launch-modal-body::-webkit-scrollbar-track { background: #f5f5f5; }
+.launch-modal-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+.launch-modal-body::-webkit-scrollbar-thumb:hover { background: #aaa; }
+.launch-tab-wrapper { margin-bottom: 30px; }
+.launch-tab {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #999;
+    width: 250px; 
+    display: block;
+    text-align: center;
+}
+.launch-field {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    align-items: center;
+    margin-bottom: 22px;
+}
+.launch-field label { font-size: 13px; font-weight: 600; color: #222; padding-right: 20px; }
+.launch-field .req { color: #d32f2f; }
+.launch-field input, .launch-field select, .launch-field textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #fff;
+}
+.launch-field input:focus, .launch-field select:focus, .launch-field textarea:focus { outline: none; border-color: #666; }
+.launch-modal-footer {
+    background: #e4e4e4;
+    padding: 16px 50px;
+    text-align: right;
+    border-top: 1px solid #ddd;
+}
+.launch-modal-footer .btn-submit {
+    background: #2b2b2b;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.launch-modal-footer .btn-submit:hover { background: #111; }
 
-    /* Dark Header */
-    .launch-modal-head {
-        background: #2b2b2b;
-        color: #ffffff;
-        padding: 16px 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .launch-modal-head h2 { 
-        margin: 0; 
-        font-size: 16px; 
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-    .launch-modal-head .icon-btn { 
-        color: #ffffff; 
-        background: none; 
-        border: none; 
-        font-size: 22px; 
-        cursor: pointer; 
-    }
+.phase-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+}
+.phase-select-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    transition: border-color 0.2s ease;
+}
+.phase-select-container:hover { border-color: #9ca3af; }
+.phase-select-container:focus-within { border-color: #0056b3; }
+.phase-select-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #4b5563;
+    pointer-events: none; 
+}
+.phase-select-text strong { font-weight: 700; margin-right: 4px; color: #333; }
+.phase-select {
+    width: 100%;
+    appearance: none; 
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: transparent; 
+    border: none;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: transparent; 
+}
+.phase-select:focus { outline: none; }
+.phase-select option { color: #4b5563; }
 
-    /* Single Column Scrollable Body */
-    .launch-modal-body {
-        background: #ffffff;
-        padding: 30px 50px 40px 50px;
-        overflow-y: auto;
-        max-height: 65vh; /* Enables scrolling for long forms */
-    }
+/* ------------------------------------- */
+/* List Page Toolbar Styling             */
+/* ------------------------------------- */
+.list-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    margin-bottom: 10px;
+}
+.toolbar-left .btn-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.filter-type-group {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #333;
+    font-weight: 600;
+    margin-right: 8px;
+}
+.filter-type-info {
+    color: #999;
+    margin-left: 6px;
+    font-weight: normal;
+    cursor: help;
+}
+.segmented-control {
+    display: flex;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.segmented-btn {
+    background: #fff;
+    color: #333;
+    border: none;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.segmented-btn.active {
+    background: #4a5568;
+    color: #fff;
+}
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #555;
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.toolbar-btn-bold {
+    font-weight: 600;
+    color: #333;
+}
 
-    /* Custom Scrollbar to match modern UI */
-    .launch-modal-body::-webkit-scrollbar { width: 8px; }
-    .launch-modal-body::-webkit-scrollbar-track { background: #f5f5f5; }
-    .launch-modal-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-    .launch-modal-body::-webkit-scrollbar-thumb:hover { background: #aaa; }
+/* ------------------------------------- */
+/* Table Header Filter Line Styling      */
+/* ------------------------------------- */
 
-    /* The "Summary" Tab matching the left column */
-    .launch-tab-wrapper {
-        margin-bottom: 30px;
-    }
-    .launch-tab {
-        font-size: 14px;
-        font-weight: 600;
-        color: #333;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #999;
-        width: 250px; /* Matches the exact width of the labels column below it */
-        display: block;
-        text-align: center;
-    }
+/* This applies a distinct blue-grey to BOTH rows so they match perfectly */
+.table thead th,
+.table-filter-row th {
+    background-color: #dce4eb !important; /* A true blue-grey that won't wash out */
+}
 
-    /* Form Grid Layout (Label left, Input right) */
-    .launch-field {
-        display: grid;
-        grid-template-columns: 250px 1fr;
-        align-items: center;
-        margin-bottom: 22px;
-    }
-    .launch-field label {
-        font-size: 13px;
-        font-weight: 600;
-        color: #222;
-        padding-right: 20px;
-    }
-    .launch-field .req { 
-        color: #d32f2f; 
-    }
-    .launch-field input, 
-    .launch-field select, 
-    .launch-field textarea {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 13px;
-        background: #fff;
-    }
-    .launch-field input:focus, 
-    .launch-field select:focus, 
-    .launch-field textarea:focus {
-        outline: none;
-        border-color: #666;
-    }
+.table th {
+    color: #555;
+    font-weight: 600;
+    border-bottom: none;
+    padding-bottom: 4px;
+}
 
-    /* Full-Width Grey Footer */
-    .launch-modal-footer {
-        background: #e4e4e4;
-        padding: 16px 50px;
-        text-align: right;
-        border-top: 1px solid #ddd;
-    }
-    .launch-modal-footer .btn-submit {
-        background: #2b2b2b;
-        color: #fff;
-        border: none;
-        padding: 10px 24px;
-        border-radius: 4px;
-        font-size: 13px;
-        cursor: pointer;
-    }
-    .launch-modal-footer .btn-submit:hover {
-        background: #111;
-    }
+.table-filter-row th {
+    padding-top: 0 !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+.table-filter-line {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #555;
+    width: 80%;
+    padding-bottom: 4px;
+    color: #555;
+}
+
+.filter-icon {
+    font-size: 12px;
+    line-height: 1;
+}
+/* ------------------------------------- */
+/* Select Columns Modal Styling          */
+/* ------------------------------------- */
+.select-cols-modal-inner {
+    width: 750px;
+    max-width: 95vw;
+    background: #fff;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    margin: 5vh auto;
+}
+.select-cols-header {
+    background: #2b2b2b;
+    color: #fff;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 500;
+}
+.select-cols-subheader {
+    padding: 12px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    color: #555;
+    font-size: 13px;
+}
+.select-cols-body {
+    display: flex;
+    height: 450px;
+}
+.select-cols-left, .select-cols-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px;
+}
+.select-cols-left {
+    border-right: 1px solid #e0e0e0;
+}
+.col-header-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+.search-box {
+    position: relative;
+    margin-bottom: 16px;
+}
+.search-box input {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+.search-box .icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 14px;
+}
+.field-list {
+    flex: 1;
+    overflow-y: auto;
+}
+.field-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+}
+.selected-field-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    background: #fff;
+}
+.selected-field-item-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.drag-handle {
+    cursor: grab;
+    color: #999;
+    font-weight: bold;
+    letter-spacing: -2px;
+    margin-right: 4px;
+}
+.remove-btn {
+    cursor: pointer;
+    color: #666;
+    font-size: 16px;
+    line-height: 1;
+}
+.right-bottom-settings {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 16px;
+    margin-top: 12px;
+}
+.setting-group {
+    margin-bottom: 12px;
+}
+.setting-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 6px;
+}
+.setting-group select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+.toggle-group {
+    display: flex;
+    border: 1px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.toggle-btn {
+    flex: 1;
+    padding: 6px 0;
+    text-align: center;
+    font-size: 13px;
+    cursor: pointer;
+}
+.toggle-btn.active {
+    background: #333;
+    color: #fff;
+}
+.toggle-btn:not(.active) {
+    background: #fff;
+    color: #333;
+}
+.select-cols-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #f9f9f9;
+}
+.btn-apply {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+/* Animation for the refresh button */
+@keyframes spin-refresh {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.spin-icon {
+    animation: spin-refresh 1s linear infinite;
+    display: inline-block; /* Required for the transform to work */
+}

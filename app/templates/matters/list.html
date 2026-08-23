@@ -1,67 +1,148 @@
 {% extends "base.html" %}
 {% block title %}Matter Management &middot; {{ app_name }}{% endblock %}
+
 {% block content %}
 <div class="page-head">
     <h1>Matter Management</h1>
-
 </div>
 
-<form class="filter-bar" method="GET">
-    <input type="search" name="q" value="{{ search }}" placeholder="Search matter name or number">
-    <select name="status">
-        <option value="">All statuses</option>
-        {% for value in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ value }}</option>{% endfor %}
-    </select>
-    <select name="area_of_law">
-        <option value="">All areas of law</option>
-        {% for value in areas_of_law %}<option value="{{ value }}" {% if value == area %}selected{% endif %}>{{ value }}</option>{% endfor %}
-    </select>
-    <button class="btn btn-dark" type="submit">Apply Filters</button>
-    <a class="btn btn-light" href="{{ url_for('matters.list_matters') }}">Reset</a>
-</form>
+<!-- Hidden inputs so the external app.js file can securely access backend variables -->
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
 
-<section class="panel">
-    <table class="table">
-        <thead>
-            <tr>
-                <th style="width: 250px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <input type="checkbox" class="bulk-select-all">
-                        <span class="bulk-action-text" style="display: none; font-size: 13px; font-weight: 500; color: var(--primary);"></span>
-                        <div class="dropdown bulk-action-dropdown">
-                            <button class="btn btn-outline btn-sm bulk-action-btn" type="button" disabled>Actions ˅</button>
-                            <div class="dropdown-menu hidden" style="position: absolute; background: white; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 10;">
-                                <a href="#" class="dropdown-item" data-action="export" style="display: block; padding: 6px 16px; color: var(--text);">Export to CSV</a>
-                                <a href="#" class="dropdown-item text-danger" data-action="delete" style="display: block; padding: 6px 16px; color: #e74c3c;">Delete Selected</a>
-                            </div>
-                        </div>
-                    </div>
-                </th>
-                <th>Matter Number</th><th>Matter Name</th><th>Market</th><th>Area of Law</th>
-                <th>Matter Type</th><th>Matter Manager</th><th>Legal Entity</th><th>Currency</th>
-                <th>Status</th><th>Opened</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for matter in matters %}
-            <tr>
-                <td style="text-align: center;"><input type="checkbox" class="bulk-select-row" value="{{ matter.id }}"></td>
-                <td><a href="{{ url_for('matters.matter_detail', matter_id=matter.id) }}">{{ matter.matter_number }}</a></td>
-                <td>{{ matter.matter_name }}</td>
-                <td>{{ matter.market }}</td>
-                <td>{{ matter.area_of_law }}</td>
-                <td>{{ matter.matter_type }}</td>
-                <td>{{ matter.manager.name if matter.manager else '-' }}</td>
-                <td>{{ matter.legal_entity }}</td>
-                <td>{{ matter.currency }}</td>
-                <td>{% with status = matter.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
-                <td>{{ matter.opened_on.strftime('%m/%d/%y') if matter.opened_on else '-' }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="11" class="empty">No matters match your filters.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% include "components/pagination.html" %}
-</section>
+<!-- Toolbar Layout -->
+<div class="list-toolbar">
+    
+    <!-- Left Side: Actions Dropdown -->
+    <div class="toolbar-left bulk-action-dropdown" style="position: relative;">
+        <button class="btn-action bulk-action-btn" type="button">
+            Actions <span style="font-size: 10px;">▼</span>
+        </button>
+        <div class="dropdown-menu hidden" style="position: absolute; top: calc(100% + 4px); left: 0; background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 100; min-width: 140px;">
+            <a href="#" data-bulk-action="delete" style="display: block; padding: 8px 16px; color: #e74c3c; font-size: 13px; text-decoration: none;">Delete Selected</a>
+        </div>
+    </div>
+
+    <!-- Right Side: Filters & Select Fields -->
+    <div class="toolbar-right">
+
+        <!-- NEW: Master Clear Filter Button (Starts Disabled & Translucent) -->
+        <button class="toolbar-btn" id="clear-all-filters-btn" disabled style="opacity: 0.5; transition: opacity 0.2s;">
+            <span style="color: #e74c3c; font-weight: bold; margin-right: 4px; font-size: 14px;">✕</span> Clear Filter
+        </button>
+        
+        <div class="filter-type-group">
+            Filter type <span class="filter-type-info">ⓘ</span>
+        </div>
+        
+        <div class="segmented-control">
+            <button type="button" class="segmented-btn active">Simple</button>
+            <button type="button" class="segmented-btn" style="border-left: 1px solid #4a5568;">Advanced</button>
+        </div>
+
+        <button class="toolbar-btn">
+            Filters <span style="font-size: 10px;">▼</span>
+        </button>
+        
+        <!-- Refresh Button -->
+        <button class="toolbar-btn" id="ajaxRefreshBtn">
+            <span class="refresh-icon" style="font-size: 16px; line-height: 1;">↻</span> Refresh
+        </button>
+        
+        <button class="toolbar-btn">
+            Export <span style="font-size: 10px;">▼</span>
+        </button>
+        
+        <button class="toolbar-btn toolbar-btn-bold" data-modal-target="select-cols-modal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+                <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+            Select Fields
+        </button>
+        
+    </div>
+</div>
+
+<!-- Table Container (Tells JS where to POST the bulk deletes and what to refresh) -->
+<div id="table-container" data-delete-url="{{ url_for('matters.bulk_delete') }}">
+    <section class="panel">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;"><input type="checkbox" class="bulk-select-all"></th>
+                    <th>Matter Number</th>
+                    <th>Matter Name</th>
+                    <th>Market</th>
+                    <th>Area of Law</th>
+                    <th>Matter Type</th>
+                    <th>Matter Manager</th>
+                    <th>Legal Entity</th>
+                    <th>Currency</th>
+                    <th>Status</th>
+                    <th>Opened</th>
+                </tr>
+                <tr class="table-filter-row">
+                    <th></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for matter in matters %}
+                <tr>
+                    <td style="text-align: center;"><input type="checkbox" class="bulk-select-row" value="{{ matter.id }}"></td>
+                    <td><a href="{{ url_for('matters.matter_detail', matter_id=matter.id) }}">{{ matter.matter_number }}</a></td>
+                    <td>{{ matter.matter_name }}</td>
+                    <td>{{ matter.market }}</td>
+                    <td>{{ matter.area_of_law }}</td>
+                    <td>{{ matter.matter_type }}</td>
+                    <td>{{ matter.manager.name if matter.manager else '-' }}</td>
+                    <td>{{ matter.legal_entity }}</td>
+                    <td>{{ matter.currency }}</td>
+                    <td>{% with status = matter.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
+                    <td>{{ matter.opened_on.strftime('%m/%d/%y') if matter.opened_on else '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="11" class="empty">No matters match your filters.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Safeguard against the undefined crash -->
+        {% if pagination is defined %}
+            {% include "components/pagination.html" %}
+        {% endif %}
+    </section>
+</div>
+
+<!-- Generic Bulk Action Confirmation Modal -->
+<div class="modal" id="bulk-confirm-modal">
+    <div class="modal-card" style="max-width: 450px;">
+        <div class="modal-head">
+            <h2>Confirm Action</h2>
+            <button class="icon-btn" type="button" data-modal-close>&times;</button>
+        </div>
+        <div style="padding-bottom: 24px; font-size: 14px; color: #444; line-height: 1.5;">
+            Do you really want to perform this bulk action on the selected record(s)? This process cannot be undone.
+        </div>
+        <div class="form-actions" style="justify-content: flex-end; display: flex; gap: 10px;">
+            <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
+            <button class="btn btn-primary" type="button" id="confirm-bulk-btn">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Select Columns Modal -->
+<div class="modal" id="select-cols-modal">
+    <!-- Paste your Select Columns Inner HTML code here (It remains unchanged) -->
+</div>
 {% endblock %}

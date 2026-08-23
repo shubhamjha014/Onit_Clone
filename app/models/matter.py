@@ -68,8 +68,8 @@ class Matter(db.Model):
     activities = db.relationship(
         "Activity", back_populates="matter", cascade="all, delete-orphan"
     )
-    invoices = db.relationship("Invoice", back_populates="matter")
-    tasks = db.relationship("Task", back_populates="matter")
+    invoices = db.relationship("Invoice", back_populates="matter", cascade="all, delete-orphan")
+    tasks = db.relationship("Task", back_populates="matter", cascade="all, delete-orphan")
 
     @property
     def matter_email(self) -> str:

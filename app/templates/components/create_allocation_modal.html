@@ -1,0 +1,46 @@
+<div class="modal" id="allocation-modal">
+    <div class="launch-modal-card">
+        
+        <!-- Header -->
+        <div class="launch-modal-head">
+            <h2>Add Allocation</h2>
+            <button class="icon-btn" type="button" data-modal-close aria-label="Close">&times;</button>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="{{ url_for('matters.add_allocation', matter_id=matter.id) }}" data-loading-text="Creating transaction..." style="display: flex; flex-direction: column; margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="launch-modal-body">
+                <div class="launch-tab-wrapper">
+                    <div class="launch-tab">Summary</div>
+                </div>
+
+                <div class="launch-field">
+                    <label for="a-department">Department <span class="req">*</span></label>
+                    <input id="a-department" name="department" required>
+                </div>
+                
+                <div class="launch-field">
+                    <label for="a-percentage">Percentage</label>
+                    <input id="a-percentage" name="percentage" type="number" step="0.01" min="0" max="100">
+                </div>
+                
+                <div class="launch-field">
+                    <label for="a-amount">Amount <span class="req">*</span></label>
+                    <input id="a-amount" name="amount" type="number" step="0.01" min="0" required>
+                </div>
+                
+                <div class="launch-field">
+                    <label for="a-notes">Notes</label>
+                    <textarea id="a-notes" name="notes" rows="3"></textarea>
+                </div>
+            </div>
+            
+            <div class="launch-modal-footer">
+                <button class="btn btn-light" type="button" data-modal-close style="margin-right: 10px;">Cancel</button>
+                <button class="btn-submit" type="submit">Add Allocation</button>
+            </div>
+        </form>
+    </div>
+</div>

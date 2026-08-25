@@ -40,6 +40,9 @@
                     <li role="presentation">
                         <a href="#invoices" role="tab">Invoices ({{ matter.invoices|length }})</a>
                     </li>
+                    <li role="presentation">
+                        <a href="#tasks" role="tab">Tasks ({{ matter.tasks|length }})</a>
+                    </li>
                 </ul>
             </div>
 
@@ -150,6 +153,31 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- Tasks Pane -->
+                <div role="tabpanel" class="tab-pane" id="tasks" style="display: none;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Task Name</th>
+                                <th>Description</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in matter.tasks %}
+                            <tr>
+                                <td><a href="{{ url_for('tasks.edit_task', task_id=task.id) }}">{{ task.title }}</a></td>
+                                <td>{{ task.description or '-' }}</td>
+                                <td>{{ task.priority }}</td>
+                                <td>{% with status = task.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="empty">No tasks linked to this matter.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
             </div>
         </section>
@@ -186,8 +214,12 @@
         <div class="more-actions-wrapper" id="more-actions-btn">
             <button type="button" class="btn btn-outline btn-block" id="more-actions-toggle">More Actions</button>
             <div class="more-actions-dropdown" id="more-actions-menu">
-                <a href="{{ url_for('tasks.new_task') }}" class="more-action-item">Create Task</a>
-                <a href="{{ url_for('invoices.new_invoice') }}" class="more-action-item">Create Invoice</a>
+                <button type="button"
+                    class="more-action-item"
+                    data-modal-target="task-modal">
+                    Create Task
+                </button>
+                <a href="{{ url_for('invoices.new_invoice') }}" class="more-actions-menu">Create Invoice</a>
             </div>
         </div>
 
@@ -247,5 +279,6 @@
 
 <!-- Inject the standalone allocation modal file here -->
 {% include "components/create_allocation_modal.html" %}
+{% include "tasks/form.html" %}
 
 {% endblock %}

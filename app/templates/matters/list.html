@@ -6,15 +6,12 @@
     <h1>Matter Management</h1>
 </div>
 
-<!-- Hidden inputs so the external app.js file can securely access backend variables -->
 <input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
 
 <!-- Toolbar Layout -->
 <div class="list-toolbar">
-    
-    <!-- Left Side: Actions Dropdown -->
     <div class="toolbar-left bulk-action-dropdown" style="position: relative;">
-        <button class="btn-action bulk-action-btn" type="button">
+        <button class="btn-action bulk-action-btn" type="button" disabled>
             Actions <span style="font-size: 10px;">▼</span>
         </button>
         <div class="dropdown-menu hidden" style="position: absolute; top: calc(100% + 4px); left: 0; background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 100; min-width: 140px;">
@@ -22,35 +19,33 @@
         </div>
     </div>
 
-    <!-- Right Side: Filters & Select Fields -->
     <div class="toolbar-right">
-
-        <!-- NEW: Master Clear Filter Button (Starts Disabled & Translucent) -->
+        <!-- Master Clear Filter Button -->
         <button class="toolbar-btn" id="clear-all-filters-btn" disabled style="opacity: 0.5; transition: opacity 0.2s;">
             <span style="color: #e74c3c; font-weight: bold; margin-right: 4px; font-size: 14px;">✕</span> Clear Filter
         </button>
         
-        <div class="filter-type-group">
-            Filter type <span class="filter-type-info">ⓘ</span>
-        </div>
-        
+        <div class="filter-type-group">Filter type <span class="filter-type-info">ⓘ</span></div>
         <div class="segmented-control">
             <button type="button" class="segmented-btn active">Simple</button>
             <button type="button" class="segmented-btn" style="border-left: 1px solid #4a5568;">Advanced</button>
         </div>
 
-        <button class="toolbar-btn">
-            Filters <span style="font-size: 10px;">▼</span>
-        </button>
+        <button class="toolbar-btn">Filters <span style="font-size: 10px;">▼</span></button>
         
-        <!-- Refresh Button -->
         <button class="toolbar-btn" id="ajaxRefreshBtn">
             <span class="refresh-icon" style="font-size: 16px; line-height: 1;">↻</span> Refresh
         </button>
-        
-        <button class="toolbar-btn">
-            Export <span style="font-size: 10px;">▼</span>
-        </button>
+        <!-- Export Dropdown -->
+        <div style="position: relative; display: inline-block;">
+            <button class="toolbar-btn export-btn" type="button">
+                Export <span style="font-size: 10px;">▼</span>
+            </button>
+            <div class="dropdown-menu hidden" style="position: absolute; top: calc(100% + 4px); right: 0; background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 100; min-width: 170px;">
+                <a href="#" onclick="exportTableToCSV('matters_export.csv', false); return false;" style="display: block; padding: 8px 16px; color: #333; font-size: 13px; text-decoration: none;">Download as CSV</a>
+                <a href="#" onclick="exportTableToCSV('matters_export_excel.csv', true); return false;" style="display: block; padding: 8px 16px; color: #333; font-size: 13px; text-decoration: none;">Download for Excel</a>
+            </div>
+        </div>
         
         <button class="toolbar-btn toolbar-btn-bold" data-modal-target="select-cols-modal">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -60,64 +55,62 @@
             </svg>
             Select Fields
         </button>
-        
     </div>
 </div>
 
-<!-- Table Container (Tells JS where to POST the bulk deletes and what to refresh) -->
+<!-- Table Container -->
 <div id="table-container" data-delete-url="{{ url_for('matters.bulk_delete') }}">
-    <section class="panel">
+    <section class="panel" style="overflow-x: auto;">
         <table class="table">
             <thead>
                 <tr>
                     <th style="width: 40px; text-align: center;"><input type="checkbox" class="bulk-select-all"></th>
-                    <th>Matter Number</th>
-                    <th>Matter Name</th>
-                    <th>Market</th>
-                    <th>Area of Law</th>
-                    <th>Matter Type</th>
-                    <th>Matter Manager</th>
-                    <th>Legal Entity</th>
-                    <th>Currency</th>
-                    <th>Status</th>
-                    <th>Opened</th>
+                    <!-- Dynamic Headers generated from Python configuration -->
+                    {% for col in grid_columns %}
+                        <th data-col="{{ col.label }}" {% if not col.default %}style="display:none;"{% endif %}>{{ col.label }}</th>
+                    {% endfor %}
                 </tr>
                 <tr class="table-filter-row">
                     <th></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
-                    <th><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    <!-- Dynamic Filters generated from Python configuration -->
+                    {% for col in grid_columns %}
+                        <th {% if not col.default %}style="display:none;"{% endif %}><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for matter in matters %}
                 <tr>
                     <td style="text-align: center;"><input type="checkbox" class="bulk-select-row" value="{{ matter.id }}"></td>
-                    <td><a href="{{ url_for('matters.matter_detail', matter_id=matter.id) }}">{{ matter.matter_number }}</a></td>
-                    <td>{{ matter.matter_name }}</td>
-                    <td>{{ matter.market }}</td>
-                    <td>{{ matter.area_of_law }}</td>
-                    <td>{{ matter.matter_type }}</td>
-                    <td>{{ matter.manager.name if matter.manager else '-' }}</td>
-                    <td>{{ matter.legal_entity }}</td>
-                    <td>{{ matter.currency }}</td>
-                    <td>{% with status = matter.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
-                    <td>{{ matter.opened_on.strftime('%m/%d/%y') if matter.opened_on else '-' }}</td>
+                    
+                    <!-- Dynamic Rows populated and formatted automatically -->
+                    {% for col in grid_columns %}
+                        <td {% if not col.default %}style="display:none;"{% endif %}>
+                            {% set val = matter|attr(col.key) %}
+                            
+                            {% if col.type == 'link' %}
+                                <a href="{{ url_for('matters.matter_detail', matter_id=matter.id) }}">{{ val }}</a>
+                            {% elif col.type == 'manager' %}
+                                {{ val.name if val else '-' }}
+                            {% elif col.type == 'badge' %}
+                                {% with status = matter.status %}{% include "components/status_badge.html" %}{% endwith %}
+                            {% elif col.type == 'date' %}
+                                {{ val.strftime('%m/%d/%y') if val else '-' }}
+                            {% elif col.type == 'currency' %}
+                                {{ '%.2f' | format(val or 0) }}
+                            {% else %}
+                                {{ val or '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+
                 </tr>
                 {% else %}
-                <tr><td colspan="11" class="empty">No matters match your filters.</td></tr>
+                <tr><td colspan="{{ grid_columns|length + 1 }}" class="empty">No matters match your filters.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
         
-        <!-- Safeguard against the undefined crash -->
         {% if pagination is defined %}
             {% include "components/pagination.html" %}
         {% endif %}
@@ -143,6 +136,71 @@
 
 <!-- Select Columns Modal -->
 <div class="modal" id="select-cols-modal">
-    <!-- Paste your Select Columns Inner HTML code here (It remains unchanged) -->
+    <div class="select-cols-modal-inner">
+        <div class="select-cols-header">
+            Select Fields
+            <button type="button" class="icon-btn" data-modal-close style="color: #fff; font-size: 24px; line-height: 1;">&times;</button>
+        </div>
+        <div class="select-cols-subheader">Choose columns to show on the grid and drag to reorder</div>
+        
+        <div class="select-cols-body">
+            
+            <!-- Left Side: ALL DB FIELDS -->
+            <div class="select-cols-left">
+                <label class="col-header-title">
+                    <input type="checkbox" id="select-all-fields-cb" style="margin: 0 8px 0 0;"> ALL FIELDS
+                </label>
+                <div class="search-box">
+                    <span class="icon">⌕</span>
+                    <input type="text" class="field-search-input" placeholder="Search for a field">
+                </div>
+                
+                <!-- Automatically loop through all columns defined in python -->
+                <div class="field-list" id="all-fields-list">
+                    {% for col in grid_columns|sort(attribute='label') %}
+                    <label class="field-item" data-field="{{ col.label }}">
+                        <input type="checkbox" {% if col.default %}checked{% endif %}> {{ col.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Side: SHOW ON GRID -->
+            <div class="select-cols-right">
+                <div class="col-header-title">SHOW ON GRID</div>
+                <div class="search-box">
+                    <span class="icon">⌕</span>
+                    <input type="text" class="field-search-input" placeholder="Search for a field">
+                </div>
+                
+                <!-- Automatically populate the default visible columns based on python config -->
+                <div class="field-list" id="show-on-grid-list">
+                    {% for col in grid_columns %}
+                        {% if col.default %}
+                        <div class="selected-field-item" data-field="{{ col.label }}">
+                            <div class="selected-field-item-left"><span class="drag-handle">⋮⋮</span> {{ col.label }}</div>
+                            <span class="remove-btn">&times;</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="right-bottom-settings">
+                    <div class="setting-group">
+                        <label>Group By:</label>
+                        <select><option>(none)</option></select>
+                    </div>
+                    <div style="font-size: 13px; color: #333; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" style="margin: 0;" checked> Truncate Data in Cells
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="select-cols-footer">
+            <button type="button" class="btn btn-light" data-modal-close>Cancel</button>
+            <button type="button" class="btn-apply btn-primary">Apply Changes</button>
+        </div>
+    </div>
 </div>
 {% endblock %}

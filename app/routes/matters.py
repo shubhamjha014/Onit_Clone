@@ -13,7 +13,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.extensions import db
-from app.models import Allocation, Comment, Matter, Participant, User
+from app.models import Allocation, Comment, Matter, Participant, User, Task
 from app.models.activity import PARTICIPANT_ROLES
 from app.models.matter import (
     AREAS_OF_LAW,
@@ -25,12 +25,36 @@ from app.models.matter import (
     PAYMENT_METHODS,
     REGIONS,
 )
+from app.models.task import TASK_PRIORITIES, TASK_STATUSES
+
 from app.services.auth_service import current_user, login_required
 from app.services.matter_service import generate_matter_number, log_activity
 
 bp = Blueprint("matters", __name__, url_prefix="/matters")
 
 PAGE_SIZE = 10
+
+# --- DYNAMIC GRID CONFIGURATION ---
+# Add new database fields here and they will automatically appear in the UI, Filters, and Modal!
+GRID_COLUMNS = [
+    {"key": "matter_number", "label": "Matter Number", "default": True, "type": "link"},
+    {"key": "matter_name", "label": "Matter Name", "default": True, "type": "text"},
+    {"key": "market", "label": "Market", "default": True, "type": "text"},
+    {"key": "area_of_law", "label": "Area of Law", "default": True, "type": "text"},
+    {"key": "matter_type", "label": "Matter Type", "default": True, "type": "text"},
+    {"key": "manager", "label": "Matter Manager", "default": True, "type": "manager"},
+    {"key": "legal_entity", "label": "Legal Entity", "default": True, "type": "text"},
+    {"key": "currency", "label": "Currency", "default": True, "type": "text"},
+    {"key": "status", "label": "Status", "default": True, "type": "badge"},
+    {"key": "opened_on", "label": "Opened On", "default": True, "type": "date"},
+    {"key": "brief_description", "label": "Brief Description", "default": False, "type": "text"},
+    {"key": "region", "label": "Region", "default": False, "type": "text"},
+    {"key": "payment_method", "label": "Payment Method", "default": False, "type": "text"},
+    {"key": "invoice_total", "label": "Invoice Total", "default": False, "type": "currency"},
+    {"key": "total_budget", "label": "Total Budget", "default": False, "type": "currency"},
+    {"key": "created_at", "label": "Created At", "default": False, "type": "date"},
+    {"key": "updated_at", "label": "Updated At", "default": False, "type": "date"}
+]
 
 
 def _parse_date(value: str):
@@ -88,6 +112,7 @@ def list_matters():
         area=area,
         statuses=MATTER_STATUSES,
         areas_of_law=AREAS_OF_LAW,
+        grid_columns=GRID_COLUMNS, # Passed to Jinja to generate the table dynamically
     )
 
 
@@ -164,6 +189,8 @@ def new_matter():
 @login_required
 def matter_detail(matter_id):
     matter = Matter.query.get(matter_id) or abort(404)
+    # This ensures the Assignee dropdown populates!
+    users = User.query.order_by(User.name).all()
     return render_template(
         "matters/detail.html",
         matter=matter,
@@ -171,6 +198,9 @@ def matter_detail(matter_id):
         participant_roles=PARTICIPANT_ROLES,
         activities=sorted(matter.activities, key=lambda a: a.created_at, reverse=True),
         comments=sorted(matter.comments, key=lambda c: c.created_at, reverse=True),
+        users=users,
+        priorities=TASK_PRIORITIES,
+        task_statuses=TASK_STATUSES,
     )
 
 
@@ -226,6 +256,39 @@ def add_allocation(matter_id):
     
     return redirect(url_for("matters.matter_detail", matter_id=matter.id))
 
+# FIXED: We added "/task" and methods=["POST"] here!
+@bp.route("/<int:matter_id>/task", methods=["POST"])
+@login_required
+def add_task(matter_id):
+    matter = Matter.query.get(matter_id) or abort(404)
+    title = request.form.get("title", "").strip()
+
+    if not title:
+        flash("Task title is required.", "error")
+        return redirect(url_for("matters.matter_detail", matter_id=matter.id))
+
+    assignee_id_raw = request.form.get("assignee_id")
+    assignee_id = int(assignee_id_raw) if assignee_id_raw else None
+    
+    due_date_raw = request.form.get("due_date")
+    due_date = _parse_date(due_date_raw) if due_date_raw else None
+
+    new_task = Task(
+        title=title,
+        matter_id=matter.id,
+        assignee_id=assignee_id,
+        description=request.form.get("description", "").strip() or None,
+        due_date=due_date,
+        priority=request.form.get("priority") or "Medium",
+        status=request.form.get("status") or "Open"
+    )
+    
+    db.session.add(new_task)
+    log_activity("Task Added", f"Task created: {title}", matter=matter, user=current_user())
+    db.session.commit()
+    
+    flash("Task added successfully.", "success")
+    return redirect(url_for("matters.matter_detail", matter_id=matter.id))
 
 @bp.route("/<int:matter_id>/comments", methods=["POST"])
 @login_required
@@ -315,7 +378,7 @@ def bulk_delete():
     if not raw_ids:
         return {"error": "No records selected"}, 400
 
-    # THE FIX: Convert the string IDs from the frontend into integers for PostgreSQL
+    # Convert the string IDs from the frontend into integers for strict databases (PostgreSQL)
     matter_ids = [int(mid) for mid in raw_ids]
 
     try:

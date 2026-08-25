@@ -1,50 +1,106 @@
-{% extends "base.html" %}
-{% block title %}{{ 'Edit' if task else 'Create' }} Task &middot; {{ app_name }}{% endblock %}
-{% block content %}
-<div class="page-head"><h1>{{ 'Edit' if task else 'Create' }} Task</h1></div>
-<section class="panel form-panel">
-    <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="field"><label for="title">Task Name <span class="req">*</span></label>
-            <input id="title" name="title" value="{{ form.get('title', '') }}" required></div>
-        <div class="field">
-            <label for="matter_id">Related Matter</label>
-            <select id="matter_id" name="matter_id">
-                <option value="">Not linked to a matter</option>
-                {% for matter in matters %}
-                <option value="{{ matter.id }}" {% if form.get('matter_id') | string == matter.id | string %}selected{% endif %}>{{ matter.matter_number }} &mdash; {{ matter.matter_name }}</option>
-                {% endfor %}
-            </select>
+<!-- === DYNAMIC CONTEXT SETUP === -->
+<!-- 1. Prevent 'undefined' crashes by defaulting to an empty dictionary if 'form' isn't passed -->
+{% set form = form | default({}) %}
+
+<!-- 2. Detect if we are inside the Matter app by checking if 'matter' exists -->
+{% set is_matter_context = matter is defined and matter.id %}
+
+<!-- 3. If in Matter app, post to the Matter route. If Standalone, post to current URL (action="") -->
+<!-- If in Matter app, post to Matter. If Standalone, post to the Tasks app route! -->
+{% set action_url = url_for('matters.add_task', matter_id=matter.id) if is_matter_context else url_for('tasks.new_task') %}
+
+<!-- 4. Handle the variable name difference between apps -->
+{% set status_list = task_statuses | default(statuses) %}
+<!-- ============================== -->
+
+<div class="modal" id="task-modal">
+    <div class="launch-modal-card">
+        
+        <!-- Header -->
+        <div class="launch-modal-head">
+            <h2>Add Task</h2>
+            <button class="icon-btn" type="button" data-modal-close aria-label="Close">&times;</button>
         </div>
-        <div class="field">
-            <label for="assignee_id">Assignee</label>
-            <select id="assignee_id" name="assignee_id">
-                <option value="">Unassigned</option>
-                {% for user in users %}
-                <option value="{{ user.id }}" {% if form.get('assignee_id') | string == user.id | string %}selected{% endif %}>{{ user.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="field"><label for="description">Description</label>
-            <textarea id="description" name="description" rows="3">{{ form.get('description', '') or '' }}</textarea></div>
-        <div class="field"><label for="due_date">Due Date</label>
-            <input id="due_date" name="due_date" type="date" value="{{ form.get('due_date').strftime('%Y-%m-%d') if form.get('due_date') and form.get('due_date') is not string else form.get('due_date', '') }}"></div>
-        <div class="field">
-            <label for="priority">Priority</label>
-            <select id="priority" name="priority">
-                {% for value in priorities %}<option value="{{ value }}" {% if form.get('priority') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="field">
-            <label for="status">Status</label>
-            <select id="status" name="status">
-                {% for value in statuses %}<option value="{{ value }}" {% if form.get('status') == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="form-actions">
-            <a class="btn btn-light" href="{{ url_for('tasks.list_tasks') }}">Cancel</a>
-            <button class="btn btn-primary" type="submit">Save Task</button>
-        </div>
-    </form>
-</section>
-{% endblock %}
+
+        <!-- Form -->
+        <form method="POST" action="{{ action_url }}" data-loading-text="Saving task..." style="display: flex; flex-direction: column; margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="launch-modal-body">
+                <div class="launch-tab-wrapper">
+                    <div class="launch-tab">Summary</div>
+                </div>
+
+                <div class="launch-field">
+                    <label for="t-title">Task Name <span class="req">*</span></label>
+                    <input id="t-title" name="title" value="{{ form.get('title', '') }}" required>
+                </div>
+                
+                <div class="launch-field">
+                    <label for="matter_id">Related Matter</label>
+                    
+                    {% if is_matter_context %}
+                        <!-- READ-ONLY STATE: When opened from a specific Matter -->
+                        <input type="text" value="{{ matter.matter_number }} &mdash; {{ matter.matter_name }}" readonly style="background-color: #f5f5f5; color: #666; border: 1px solid #ccc; cursor: not-allowed;">
+                        <!-- Hidden field to actually submit the data to the backend -->
+                        <input type="hidden" name="matter_id" value="{{ matter.id }}">
+                    {% else %}
+                        <!-- EDITABLE STATE: When opened from the standalone Tasks app -->
+                        <select id="matter_id" name="matter_id">
+                            <option value="">Not linked to a matter</option>
+                            {% for m in matters %}
+                            <option value="{{ m.id }}" {% if form.get('matter_id') | string == m.id | string %}selected{% endif %}>{{ m.matter_number }} &mdash; {{ m.matter_name }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                    
+                </div>
+                
+                <div class="launch-field">
+                    <label for="assignee_id">Assignee</label>
+                    <select id="assignee_id" name="assignee_id">
+                        <option value="">Unassigned</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if form.get('assignee_id') | string == user.id | string %}selected{% endif %}>{{ user.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="launch-field">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3">{{ form.get('description', '') }}</textarea>
+                </div>
+                
+                <div class="launch-field">
+                    <label for="due_date">Due Date</label>
+                    <input id="due_date" name="due_date" type="date" value="{{ form.get('due_date').strftime('%Y-%m-%d') if form.get('due_date') and form.get('due_date') is not string else form.get('due_date', '') }}">
+                </div>
+                
+                <div class="launch-field">
+                    <label for="priority">Priority</label>
+                    <select id="priority" name="priority">
+                        {% for value in priorities %}
+                        <option value="{{ value }}" {% if form.get('priority') == value or (not form.get('priority') and value == 'Medium') %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="launch-field">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <!-- Pulls from the status_list variable we created at the top of the file -->
+                        {% for value in status_list %}
+                        <option value="{{ value }}" {% if form.get('status') == value or (not form.get('status') and value == 'Open') %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+            
+            <div class="launch-modal-footer">
+                <button class="btn btn-light" type="button" data-modal-close style="margin-right: 10px;">Cancel</button>
+                <button class="btn-submit" type="submit">Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>

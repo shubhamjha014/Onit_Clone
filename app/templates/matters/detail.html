@@ -167,7 +167,7 @@
                         <tbody>
                             {% for task in matter.tasks %}
                             <tr>
-                                <td><a href="{{ url_for('tasks.edit_task', task_id=task.id) }}">{{ task.title }}</a></td>
+                                <td><a href="{{ url_for('tasks.task_detail', task_id=task.id) }}">{{ task.title }}</a></td>
                                 <td>{{ task.description or '-' }}</td>
                                 <td>{{ task.priority }}</td>
                                 <td>{% with status = task.status %}{% include "components/status_badge.html" %}{% endwith %}</td>

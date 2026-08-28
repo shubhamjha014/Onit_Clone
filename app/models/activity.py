@@ -2,22 +2,16 @@ from datetime import datetime
 
 from app.extensions import db
 
-PARTICIPANT_ROLES = [
-    "Requester",
-    "Matter Manager",
-    "Attorney",
-    "Paralegal",
-    "Business Owner",
-    "External Counsel",
-]
-
 
 class Participant(db.Model):
     __tablename__ = "participants"
 
     id = db.Column(db.Integer, primary_key=True)
     matter_id = db.Column(
-        db.Integer, db.ForeignKey("matters.id", ondelete="CASCADE"), nullable=False
+        db.Integer, db.ForeignKey("matters.id", ondelete="CASCADE"), nullable=True
+    )
+    task_id = db.Column(
+        db.Integer, db.ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True
     )
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(255), nullable=False)
@@ -25,6 +19,7 @@ class Participant(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     matter = db.relationship("Matter", back_populates="participants")
+    task = db.relationship("Task", back_populates="participants")
 
 
 class Allocation(db.Model):
@@ -48,13 +43,17 @@ class Comment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     matter_id = db.Column(
-        db.Integer, db.ForeignKey("matters.id", ondelete="CASCADE"), nullable=False
+        db.Integer, db.ForeignKey("matters.id", ondelete="CASCADE"), nullable=True
+    )
+    task_id = db.Column(
+        db.Integer, db.ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True
     )
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     comment_text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     matter = db.relationship("Matter", back_populates="comments")
+    task = db.relationship("Task", back_populates="comments")
     author = db.relationship("User")
 
 
@@ -65,10 +64,14 @@ class Activity(db.Model):
     matter_id = db.Column(
         db.Integer, db.ForeignKey("matters.id", ondelete="CASCADE"), nullable=True
     )
+    task_id = db.Column(
+        db.Integer, db.ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True
+    )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     activity_type = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(400), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+    task = db.relationship("Task", back_populates="activities")
     matter = db.relationship("Matter", back_populates="activities")
     user = db.relationship("User")

@@ -6,10 +6,10 @@ from app.extensions import csrf, db, migrate
 from app.services.auth_service import current_user
 
 from app.models.matter import (
-    AREAS_OF_LAW, CURRENCIES, LEGAL_ENTITIES, MARKETS,
-    MATTER_STATUSES, MATTER_TYPES, PAYMENT_METHODS, REGIONS,
+    CURRENCIES, LEGAL_ENTITIES, MARKETS, MATTER_TYPES, PAYMENT_METHODS, REGIONS,
 )
 from app.models.user import User
+from app.models.list_registry import ListRegistry
 
 
 
@@ -28,8 +28,9 @@ def create_app(config_object=Config):
     from app.routes.matters import bp as matters_bp
     from app.routes.tasks import bp as tasks_bp
     from app.routes.settings import bp as settings_bp
+    from app.routes.lists import bp as lists_bp
 
-    for blueprint in (auth_bp, home_bp, matters_bp, invoices_bp, contacts_bp, tasks_bp, settings_bp):
+    for blueprint in (auth_bp, home_bp, matters_bp, invoices_bp, contacts_bp, tasks_bp, settings_bp, lists_bp):
         app.register_blueprint(blueprint)
 
     @app.context_processor
@@ -41,12 +42,10 @@ def create_app(config_object=Config):
             "matter_form_choices": {
                 "managers": User.query.order_by(User.name).all() if current_user() else [],
                 "markets": MARKETS,
-                "areas_of_law": AREAS_OF_LAW,
                 "regions": REGIONS,
                 "matter_types": MATTER_TYPES,
                 "legal_entities": LEGAL_ENTITIES,
                 "currencies": CURRENCIES,
-                "statuses": MATTER_STATUSES,
                 "payment_methods": PAYMENT_METHODS,
             }
         }

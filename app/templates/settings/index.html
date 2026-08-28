@@ -1,15 +1,7 @@
 {% extends "base.html" %}
 
 {% block sidebar %}
-<nav id="sidebar" class="sidebar">
-    <a class="nav-item {% if request.blueprint == 'home' %}active{% endif %}" href="{{ url_for('home.dashboard') }}">
-        <span class="nav-icon">&#8962;</span> Home
-    </a>
-    <div class="nav-section">Settings Menu</div>
-    <a class="nav-item active" href="{{ url_for('settings.index') }}">General</a>
-    <a class="nav-item" href="{{ url_for('settings.users') }}">Users</a>
-    <a class="nav-item" href="{{ url_for('settings.lists') }}">Lists</a>
-</nav>
+    {% include "settings/sidebar.html" %}
 {% endblock %}
 
 {% block title %}Settings &middot; {{ app_name }}{% endblock %}

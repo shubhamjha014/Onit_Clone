@@ -57,7 +57,7 @@
                     <label for="area_of_law">Area Of Law <span class="req">*</span></label>
                     <select id="area_of_law" name="area_of_law" required>
                         <option value="">Select an area of law</option>
-                        {% for value in matter_form_choices.areas_of_law %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+                        {% for value in areas_of_law %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
                     </select>
                 </div>
                 

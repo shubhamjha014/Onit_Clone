@@ -1,33 +1,94 @@
 {% extends "settings/index.html" %}
 
-{% block sidebar %}
-<nav id="sidebar" class="sidebar">
-    <a class="nav-item {% if request.blueprint == 'home' %}active{% endif %}" href="{{ url_for('home.dashboard') }}">
-        <span class="nav-icon">&#8962;</span> Home
-    </a>
-    <div class="nav-section">Settings Menu</div>
-    <a class="nav-item" href="{{ url_for('settings.index') }}">General</a>
-    <a class="nav-item" href="{{ url_for('settings.users') }}">Users</a>
-    <a class="nav-item active" href="{{ url_for('settings.lists') }}">Lists</a>
-</nav>
-{% endblock %}
-
 {% block content %}
-<div class="page-head"><h1>Lists</h1></div>
-<div class="panel-grid">
-    <section class="panel">
-        <div class="side-card" style="margin-bottom: 16px;">
-            <h3>Markets</h3>
-            <ul class="side-list">{% for market in matter_form_choices.markets %}<li>{{ market }}</li>{% endfor %}</ul>
+<div class="page-head" style="margin-bottom: 16px;">
+    <h1>Lists</h1>
+    <!-- Changed to btn-primary to match the modal button -->
+    <button class="btn btn-primary" type="button" data-modal-target="importListModal">Import List</button>
+</div>
+
+<!-- Standard Toolbar with Filter & Clear functionality -->
+<div class="table-actions-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    
+    <!-- Left Side: Search / Filter -->
+    <div class="filter-group" style="display: flex; gap: 8px;">
+        <input type="text" id="listSearch" placeholder="Filter lists..." onkeyup="filterTable('listSearch', 'listsTable')" class="form-control" style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 250px;">
+        <button class="btn btn-outline" type="button" onclick="clearFilter('listSearch', 'listsTable')">Clear</button>
+    </div>
+
+    <!-- Right Side: Standard Actions matching Matter App -->
+    <div class="action-group" style="display: flex; gap: 8px;">
+        <button class="btn btn-outline" type="button">
+            Filters 
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px; margin-bottom: 2px;"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button class="btn btn-outline" type="button" onclick="window.location.reload();">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 2.81-6.6L3 8"/></svg>
+            Refresh
+        </button>
+        <button class="btn btn-outline" type="button">
+            Export 
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+    </div>
+</div>
+
+<section class="panel">
+    <table class="table" id="listsTable">
+        <thead>
+            <tr>
+                <th>Name <span class="column-icon">&equiv;</span></th>
+                <th>Imported Date <span class="column-icon">&equiv;</span></th>
+                <th>Last Import Date <span class="column-icon">&equiv;</span></th>
+                <th>Action <span class="column-icon">&equiv;</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for list in dynamic_lists %}
+            <tr>
+                <td><a href="{{ url_for('lists.view_list', table_name=list.table_name) }}">{{ list.display_name }}</a></td>
+                <td>{{ list.created_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                <td>{{ list.updated_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('lists.delete_list', table_name=list.table_name) }}" onsubmit="return confirm('Are you sure you want to delete this list?');" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Gold Trash Can SVG Icon -->
+                        <button type="submit" class="icon-btn" title="Delete" style="border: none; background: transparent; cursor: pointer; padding: 0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#e6c200" stroke="#b39700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17" stroke="#b39700"></line>
+                                <line x1="14" y1="11" x2="14" y2="17" stroke="#b39700"></line>
+                            </svg>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="empty text-center">No lists imported yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<!-- IMPORT LIST MODAL -->
+<div id="importListModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h2>Import List</h2>
+            <button class="icon-btn" type="button" data-modal-close>&times;</button>
         </div>
-        <div class="side-card" style="margin-bottom: 16px;">
-            <h3>Areas of Law</h3>
-            <ul class="side-list">{% for area in matter_form_choices.areas_of_law %}<li>{{ area }}</li>{% endfor %}</ul>
-        </div>
-        <div class="side-card">
-            <h3>Matter Types</h3>
-            <ul class="side-list">{% for matter_type in matter_form_choices.matter_types %}<li>{{ matter_type }}</li>{% endfor %}</ul>
-        </div>
-    </section>
+        <form method="POST" action="{{ url_for('lists.import_list') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label for="excel-file">Upload Excel File (.xlsx) <span class="req">*</span></label>
+                <input type="file" id="excel-file" name="file" accept=".xlsx, .xls" required>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
+                <button class="btn btn-primary" type="submit">Import</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

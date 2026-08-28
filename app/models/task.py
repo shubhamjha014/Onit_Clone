@@ -2,7 +2,6 @@ from datetime import datetime
 
 from app.extensions import db
 
-TASK_STATUSES = ["Open", "In Progress", "Completed", "Cancelled"]
 TASK_PRIORITIES = ["Low", "Medium", "High", "Critical"]
 
 
@@ -24,3 +23,12 @@ class Task(db.Model):
 
     matter = db.relationship("Matter", back_populates="tasks")
     assignee = db.relationship("User")
+    participants = db.relationship(
+        "Participant", back_populates="task", cascade="all, delete-orphan"
+    )
+    comments = db.relationship(
+            "Comment", back_populates="task", cascade="all, delete-orphan"
+        )
+    activities = db.relationship(
+            "Activity", back_populates="task", cascade="all, delete-orphan"
+        )

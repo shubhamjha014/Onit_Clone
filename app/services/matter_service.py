@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models import Activity, Matter
+from app.models import Activity, Matter, Task
 
 
 def generate_matter_number() -> str:
@@ -19,9 +19,10 @@ def generate_matter_number() -> str:
     return f"{prefix}{sequence:05d}"
 
 
-def log_activity(activity_type, description, matter=None, user=None):
+def log_activity(activity_type, description, matter=None, user=None, task=None):
     activity = Activity(
         matter_id=matter.id if matter else None,
+        task_id=task.id if task else None,
         user_id=user.id if user else None,
         activity_type=activity_type,
         description=description,

@@ -1,13 +1,44 @@
-{% if pagination.pages > 1 %}
-{% set params = request.args.to_dict() %}
-{% set _ = params.pop('page', None) %}
-<nav class="pagination">
-    {% if pagination.has_prev %}
-    <a class="btn btn-light" href="{{ url_for(request.endpoint, page=pagination.prev_num, **params) }}">Prev</a>
-    {% endif %}
-    <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }} &middot; {{ pagination.total }} records</span>
-    {% if pagination.has_next %}
-    <a class="btn btn-light" href="{{ url_for(request.endpoint, page=pagination.next_num, **params) }}">Next</a>
-    {% endif %}
+<!-- 1. Normalize variables to seamlessly support both SQLAlchemy objects and custom dictionaries -->
+{% set p_page = pagination.page %}
+{% set p_per_page = pagination.per_page %}
+{% set p_total_pages = pagination.pages if pagination.pages is defined else pagination.total_pages %}
+{% set p_total_rows = pagination.total if pagination.total is defined else pagination.total_rows %}
+{% set p_start = ((p_page - 1) * p_per_page) + 1 if p_total_rows > 0 else 0 %}
+{% set p_end = (p_page * p_per_page) if (p_page * p_per_page) < p_total_rows else p_total_rows %}
+
+<!-- 2. UI rendering utilizing your existing global CSS classes -->
+<nav class="pagination" style="justify-content: space-between; background: #fff; padding: 12px 16px; border-top: 1px solid var(--border); margin: 0;">
+    
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <!-- Navigation Controls -->
+        <span style="display: flex; align-items: center; gap: 6px;">
+            <a href="javascript:void(0)" onclick="changePage(1, {{ p_per_page }})" style="font-weight: bold; padding: 0 4px; {% if p_page <= 1 %}opacity: 0.3; pointer-events: none; color: var(--text);{% endif %}">|&lt;</a>
+            
+            <a href="javascript:void(0)" onclick="changePage({{ p_page - 1 }}, {{ p_per_page }})" style="font-weight: bold; padding: 0 4px; {% if p_page <= 1 %}opacity: 0.3; pointer-events: none; color: var(--text);{% endif %}">&lt;</a>
+            
+            <span style="margin-left: 6px;">Page</span>
+            <input type="number" value="{{ p_page }}" min="1" max="{{ p_total_pages }}" onchange="changePage(this.value, {{ p_per_page }})" style="width: 50px; text-align: center; padding: 4px; margin: 0 4px;">
+            <span style="margin-right: 6px;">of {{ p_total_pages }}</span>
+            
+            <a href="javascript:void(0)" onclick="changePage({{ p_page + 1 }}, {{ p_per_page }})" style="font-weight: bold; padding: 0 4px; {% if p_page >= p_total_pages %}opacity: 0.3; pointer-events: none; color: var(--text);{% endif %}">&gt;</a>
+            
+            <a href="javascript:void(0)" onclick="changePage({{ p_total_pages }}, {{ p_per_page }})" style="font-weight: bold; padding: 0 4px; {% if p_page >= p_total_pages %}opacity: 0.3; pointer-events: none; color: var(--text);{% endif %}">&gt;|</a>
+        </span>
+        
+        <!-- Rows Per Page Dropdown -->
+        <span>
+            Rows per page: 
+            <select onchange="changePage(1, this.value)" style="padding: 4px; margin-left: 4px; min-width: 60px;">
+                <option value="10" {% if p_per_page == 10 %}selected{% endif %}>10</option>
+                <option value="50" {% if p_per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if p_per_page == 100 %}selected{% endif %}>100</option>
+                <option value="200" {% if p_per_page == 200 %}selected{% endif %}>200</option>
+            </select>
+        </span>
+    </div>
+    
+    <!-- Status Text -->
+    <div class="page-info">
+        {{ p_start }}-{{ p_end }} of {{ p_total_rows }} records
+    </div>
 </nav>
-{% endif %}

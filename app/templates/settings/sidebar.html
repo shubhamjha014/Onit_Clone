@@ -1,0 +1,23 @@
+<!-- app/templates/settings/_sidebar.html -->
+<nav id="sidebar" class="sidebar">
+    <a class="nav-item {% if request.blueprint == 'home' %}active{% endif %}" href="{{ url_for('home.dashboard') }}">
+        <span class="nav-icon">&#8962;</span> Home
+    </a>
+    
+    <div class="nav-section">Settings Menu</div>
+    
+    <!-- Dynamically check the endpoint to apply the 'active' class -->
+    <a class="nav-item {% if request.endpoint == 'settings.index' %}active{% endif %}" href="{{ url_for('settings.index') }}">
+        General
+    </a>
+    <a class="nav-item {% if request.endpoint == 'settings.users' %}active{% endif %}" href="{{ url_for('settings.users') }}">
+        Users
+    </a>
+    <!-- Uses request.blueprint so it stays active even if you add more list routes later (like /lists/import) -->
+    <a class="nav-item {% if request.blueprint == 'lists' %}active{% endif %}" href="{{ url_for('lists.index') }}">
+        Lists
+    </a>
+    <a class="nav-item {% if request.endpoint == 'settings.app_settings' %}active{% endif %}" href="{{ url_for('settings.app_settings') }}">
+        App Settings
+    </a>
+</nav>

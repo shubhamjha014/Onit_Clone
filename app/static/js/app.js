@@ -141,7 +141,7 @@ document.addEventListener("click", (event) => {
     fetch(deleteUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
-        body: JSON.stringify({ matter_ids: pendingBulkAction.selectedIds })
+        body: JSON.stringify({ ids: pendingBulkAction.selectedIds })
     })
     .then(async res => {
         if (!res.ok) {
@@ -586,3 +586,75 @@ window.exportTableToCSV = function(filename, excelFriendly = false) {
     link.click();
     document.body.removeChild(link);
 };
+
+/**
+ * lists_filter.js
+ * 
+ * Provides client-side (browser) filtering for data tables.
+ * Used on the Lists dashboard and List Details pages to instantly 
+ * search and filter rows based on user input without reloading the page.
+ */
+
+/**
+ * Filters a table's rows based on the text entered into a specific input field.
+ * 
+ * @param {string} inputId - The HTML ID of the search/filter input field.
+ * @param {string} tableId - The HTML ID of the table to be filtered.
+ */
+function filterTable(inputId, tableId) {
+    // 1. Grab the input element and the search text (converted to lowercase for case-insensitive matching)
+    const input = document.getElementById(inputId);
+    if (!input) return; // Exit safely if the input doesn't exist on the page
+    const filterText = input.value.toLowerCase();
+
+    // 2. Grab the table element and all of its rows (<tr>)
+    const table = document.getElementById(tableId);
+    if (!table) return; // Exit safely if the table doesn't exist
+    const rows = table.getElementsByTagName("tr");
+
+    // 3. Loop through all table rows (starting at index 1 to skip the header row `<th>`)
+    for (let i = 1; i < rows.length; i++) {
+        // Extract all text content from the current row
+        let rowText = rows[i].textContent || rows[i].innerText;
+        
+        // 4. Check if the row's text contains the search filter string
+        if (rowText.toLowerCase().indexOf(filterText) > -1) {
+            // Match found: reset the display property so the row is visible
+            rows[i].style.display = "";
+        } else {
+            // No match: hide the row
+            rows[i].style.display = "none";
+        }
+    }
+}
+
+/**
+ * Clears the search input and resets the table to show all rows.
+ * 
+ * @param {string} inputId - The HTML ID of the search/filter input field.
+ * @param {string} tableId - The HTML ID of the table to be reset.
+ */
+function clearFilter(inputId, tableId) {
+    // 1. Grab the input element
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    // 2. Clear the text inside the input field
+    input.value = '';
+
+    // 3. Re-run the filter function with the now-empty string to unhide all rows
+    filterTable(inputId, tableId);
+}
+// Pagination Script
+function changePage(page, perPage) {
+    // 1. Ensure page is at least 1
+    page = Math.max(1, page);
+    
+    // 2. Update URL search parameters safely
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', page);
+    url.searchParams.set('per_page', perPage);
+    
+    // 3. Reload page with new data
+    window.location.href = url.toString();
+}

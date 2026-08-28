@@ -1,0 +1,96 @@
+{% extends "settings/index.html" %}
+
+{% block content %}
+<div class="page-head page-head-compact" style="margin-bottom: 24px;">
+    <h1 class="page-head-title">App Settings</h1>
+    <p class="text-muted page-head-subtitle">Configure system-wide dropdowns and global values.</p>
+</div>
+
+<form method="POST" action="{{ url_for('settings.app_settings') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- ==================== MATTERS APP CARD ==================== -->
+    <section class="panel" style="margin-bottom: 24px;">
+        <div class="panel-header" style="border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 1.2rem; color: #1f51b5;">Matters App</h2>
+        </div>
+        
+        <!-- Replaced detail-rows with a vertical flex container -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- Row 1: Statuses -->
+            <div class="field" style="width: 100%;">
+                <label for="matter_statuses" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Statuses <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <!-- Read-Only View -->
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('matter_statuses') or 'None' }}
+                </div>
+                
+                <!-- Edit View -->
+                <textarea id="matter_statuses" name="matter_statuses" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Open, In Progress, Closed">{{ settings.get('matter_statuses', '') }}</textarea>
+            </div>
+            
+            <!-- Row 2: Roles -->
+            <div class="field" style="width: 100%;">
+                <label for="matter_roles" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Roles <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('matter_roles') or 'None' }}
+                </div>
+                
+                <textarea id="matter_roles" name="matter_roles" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Lead Counsel, Paralegal, Partner">{{ settings.get('matter_roles', '') }}</textarea>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== TASKS APP CARD ==================== -->
+    <section class="panel" style="margin-bottom: 24px;">
+        <div class="panel-header" style="border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 1.2rem; color: #1f51b5;">Tasks App</h2>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Row 1: Statuses -->
+            <div class="field" style="width: 100%;">
+                <label for="task_statuses" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Statuses <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('task_statuses') or 'None' }}
+                </div>
+                
+                <textarea id="task_statuses" name="task_statuses" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Not Started, In Progress, Completed">{{ settings.get('task_statuses', '') }}</textarea>
+            </div>
+            
+            <!-- Row 2: Roles -->
+            <div class="field" style="width: 100%;">
+                <label for="task_roles" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Roles <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('task_roles') or 'None' }}
+                </div>
+                
+                <textarea id="task_roles" name="task_roles" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Assignee, Reviewer">{{ settings.get('task_roles', '') }}</textarea>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== ACTION BUTTONS ==================== -->
+    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
+        <!-- Default State: Just the Edit Button -->
+        <button id="editBtn" class="btn btn-primary" type="button" onclick="enableEdit()">Edit</button>
+        
+        <!-- Edit State: Cancel and Save (Hidden by default) -->
+        <button id="cancelBtn" class="btn btn-light" type="button" style="display: none;" onclick="cancelEdit()">Cancel</button>
+        <button id="updateBtn" class="btn btn-primary" type="submit" style="display: none;">Save Changes</button>
+    </div>
+</form>
+{% endblock %}

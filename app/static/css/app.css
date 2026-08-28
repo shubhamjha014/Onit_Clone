@@ -811,3 +811,75 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
     animation: spin-refresh 1s linear infinite;
     display: inline-block; /* Required for the transform to work */
 }
+
+/* Lists Module Styles */
+
+.page-head-compact {
+    margin-bottom: 8px;
+}
+
+.page-head-title {
+    margin-bottom: 4px;
+}
+
+.page-head-subtitle {
+    margin-top: 0;
+}
+
+.list-actions {
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+.table-actions-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.column-icon {
+    color: #999;
+    margin-left: 4px;
+}
+
+.pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    font-size: 0.9em;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pagination-input {
+    width: 40px;
+    padding: 2px;
+    text-align: center;
+}
+
+.pagination-select {
+    padding: 2px;
+}
+
+.modal-body-scrollable {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.form-actions-spaced {
+    margin-top: 16px;
+}

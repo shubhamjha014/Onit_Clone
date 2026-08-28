@@ -71,6 +71,11 @@ def run_migrations_offline():
     with context.begin_transaction():
         context.run_migrations()
 
+def include_name(name, type_, parent_names):
+    # Ignore any database table that starts with "list_"
+    if type_ == "table" and name is not None and name.startswith("list_"):
+        return False
+    return True
 
 def run_migrations_online():
     """Run migrations in 'online' mode.
@@ -100,6 +105,7 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
+            include_name=include_name,
             **conf_args
         )
 

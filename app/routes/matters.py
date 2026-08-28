@@ -11,28 +11,26 @@ from flask import (
 )
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import or_, text # <--- Add text here
 
 from app.extensions import db
 from app.models import Allocation, Comment, Matter, Participant, User, Task
-from app.models.activity import PARTICIPANT_ROLES
 from app.models.matter import (
-    AREAS_OF_LAW,
     CURRENCIES,
     LEGAL_ENTITIES,
     MARKETS,
-    MATTER_STATUSES,
     MATTER_TYPES,
     PAYMENT_METHODS,
     REGIONS,
 )
-from app.models.task import TASK_PRIORITIES, TASK_STATUSES
+from app.models.task import TASK_PRIORITIES
+from app.models.app_setting import AppSetting
 
+from app.routes.tasks import get_task_statuses
 from app.services.auth_service import current_user, login_required
 from app.services.matter_service import generate_matter_number, log_activity
 
 bp = Blueprint("matters", __name__, url_prefix="/matters")
-
-PAGE_SIZE = 10
 
 # --- DYNAMIC GRID CONFIGURATION ---
 # Add new database fields here and they will automatically appear in the UI, Filters, and Modal!
@@ -56,6 +54,41 @@ GRID_COLUMNS = [
     {"key": "updated_at", "label": "Updated At", "default": False, "type": "date"}
 ]
 
+def get_participant_roles():
+    """Fetches the latest participant roles directly from the JSON database column."""
+    setting = AppSetting.query.filter_by(key="matter_roles").first()
+    # Returns the dynamic list, or a safe fallback if the database is empty
+    if setting and setting.value:
+        return setting.value
+    return ["Requester", "Matter Manager", "Attorney", "Paralegal"]
+
+def get_matter_statuses():
+    """Fetches the latest matter statuses directly from the JSON database column."""
+    setting = AppSetting.query.filter_by(key="matter_statuses").first()
+    if setting and setting.value:
+        return setting.value
+    return ["Pending Allocation", "In Progress", "Closed"]
+
+def get_areas_of_law():
+    """Fetches areas of law dynamically from the uploaded list_area_of_law table."""
+    try:
+        with db.engine.connect() as conn:
+            # Query the dynamic table. We assume the Excel column header was "Area of Law", 
+            # which the backend sanitized to 'area_of_law'.
+            result = conn.execute(text("SELECT area_of_law FROM list_area_of_law"))
+            
+            # Extract the values from the first column of the results
+            areas = [row[0] for row in result if row[0]]
+            
+            if areas:
+                return areas
+    except Exception:
+        # Failsafe fallback: If the user hasn't uploaded the Excel file yet, 
+        # or the table was deleted, provide these defaults so the app doesn't crash.
+        pass
+        
+    return ["Corporate Legal", "Employment", "Litigation", "Real Estate"]
+
 
 def _parse_date(value: str):
     if not value:
@@ -70,12 +103,12 @@ def _form_choices():
     return {
         "managers": User.query.order_by(User.name).all(),
         "markets": MARKETS,
-        "areas_of_law": AREAS_OF_LAW,
+        "areas_of_law": get_areas_of_law(),
         "regions": REGIONS,
         "matter_types": MATTER_TYPES,
         "legal_entities": LEGAL_ENTITIES,
         "currencies": CURRENCIES,
-        "statuses": MATTER_STATUSES,
+        "statuses": get_matter_statuses(),
         "payment_methods": PAYMENT_METHODS,
     }
 
@@ -86,7 +119,14 @@ def list_matters():
     search = request.args.get("q", "").strip()
     status = request.args.get("status", "")
     area = request.args.get("area_of_law", "")
+    
+    # 1. Grab page and per_page dynamically (Defaulting to 10 rows)
     page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    
+    # Safely restrict dropdown values to prevent UI tampering
+    if per_page not in [10, 50, 100, 200]:
+        per_page = 10
 
     query = Matter.query
     if search:
@@ -99,20 +139,21 @@ def list_matters():
     if area:
         query = query.filter_by(area_of_law=area)
 
+    # 2. Pass per_page directly into the standard SQLAlchemy query
     pagination = query.order_by(Matter.created_at.desc()).paginate(
-        page=page, per_page=PAGE_SIZE, error_out=False
+        page=page, per_page=per_page, error_out=False
     )
 
     return render_template(
         "matters/list.html",
-        pagination=pagination,
+        pagination=pagination, # Passes the native object seamlessly!
         matters=pagination.items,
         search=search,
         status=status,
         area=area,
-        statuses=MATTER_STATUSES,
-        areas_of_law=AREAS_OF_LAW,
-        grid_columns=GRID_COLUMNS, # Passed to Jinja to generate the table dynamically
+        statuses=get_matter_statuses(),
+        areas_of_law=get_areas_of_law(),
+        grid_columns=GRID_COLUMNS,
     )
 
 
@@ -194,13 +235,14 @@ def matter_detail(matter_id):
     return render_template(
         "matters/detail.html",
         matter=matter,
-        statuses=MATTER_STATUSES,
-        participant_roles=PARTICIPANT_ROLES,
+        statuses=get_matter_statuses(),
+        participant_roles=get_participant_roles(),
+        areas_of_law=get_areas_of_law(),
         activities=sorted(matter.activities, key=lambda a: a.created_at, reverse=True),
         comments=sorted(matter.comments, key=lambda c: c.created_at, reverse=True),
         users=users,
         priorities=TASK_PRIORITIES,
-        task_statuses=TASK_STATUSES,
+        task_statuses=get_task_statuses(),
     )
 
 
@@ -317,7 +359,7 @@ def change_status(matter_id):
     matter = Matter.query.get(matter_id) or abort(404)
     status = request.form.get("status", "")
 
-    if status not in MATTER_STATUSES:
+    if status not in get_matter_statuses():
         flash("Unknown matter status.", "error")
         return redirect(url_for("matters.matter_detail", matter_id=matter.id))
 
@@ -373,7 +415,7 @@ def update(matter_id):
 @login_required
 def bulk_delete():
     data = request.get_json()
-    raw_ids = data.get("matter_ids", [])
+    raw_ids = data.get("ids", [])
     
     if not raw_ids:
         return {"error": "No records selected"}, 400

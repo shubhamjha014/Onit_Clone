@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }} &middot; {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>{{ task.title }}</h1>
+    <a class="btn btn-light" href="{{ url_for('tasks.list_tasks') }}">Back to Tasks</a>
+</div>
+
+<section class="panel summary-panel">
+    <div class="summary-grid">
+        <div><span>Title</span><strong>{{ task.title }}</strong></div>
+
+        <div><span>Assignee</span><strong>{{ task.assignee.name if task.assignee else '-' }}</strong></div>
+
+        <div><span>Due Date</span><strong>{{ task.due_date.strftime('%m/%d/%y') if task.due_date else '-' }}</strong></div>
+
+        <div><span>Priority</span><strong>{{ task.priority }}</strong></div>
+
+        <div><span>Status</span><strong>{{ task.status }}</strong></div>
+    </div>
+</section>
+
+<div class="detail-layout">
+    <div class="detail-main">
+        <section class="panel">
+            
+            <!-- Tab Navigation Menu -->
+            <div class="tab-navigation">
+                <ul class="nav-tabs" role="tablist">
+                    <li role="presentation">
+                        <a href="#details" role="tab" class="active">Details</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Tab Content Panes -->
+            <div class="tab-content">
+                
+                <!-- Details Pane -->
+                <div role="tabpanel" class="tab-pane active" id="details">
+                    <form method="POST" action="{{ url_for('tasks.update', task_id=task.id) }}" id="detailsForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="detail-rows">
+
+                            <!-- Row 1 -->
+                            <div class="detail-label">
+                                Title <span class="req">*</span>
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ task.title }}</strong>
+                                <input
+                                    class="edit-mode"
+                                    type="text"
+                                    name="title"
+                                    value="{{ task.title }}"
+                                    style="display:none;"
+                                >
+                            </div>
+
+                            <!-- Row 2 -->
+                            <div class="detail-label">
+                                Matter ID
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ task.matter_id or '-' }}</strong>
+                                <input
+                                    class="edit-mode"
+                                    type="text"
+                                    name="matter_id"
+                                    value="{{ task.matter_id or '' }}"
+                                    style="display:none;"
+                                >
+                            </div>
+
+                            <!-- Row 3 -->
+                            <div class="detail-label">
+                                Assignee
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ task.assignee.name if task.assignee else '-' }}</strong>
+                                <select class="edit-mode" name="assignee_id" style="display:none;">
+                                    <option value="">(Unassigned)</option>
+                                    {% for u in users %}
+                                        <option value="{{ u.id }}" {% if task.assignee_id == u.id %}selected{% endif %}>
+                                            {{ u.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Row 4 -->
+                            <div class="detail-label">
+                                Description
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ task.description or '-' }}</strong>
+                                <textarea
+                                    class="edit-mode"
+                                    name="description"
+                                    style="display:none;"
+                                >{{ task.description or '' }}</textarea>
+                            </div>
+
+                            <!-- Row 5 -->
+                            <div class="detail-label">
+                                Due Date
+                            </div>
+                            <div>
+                                <strong class="view-mode">
+                                    {{ task.due_date.strftime('%m/%d/%y') if task.due_date else '-' }}
+                                </strong>
+                                <input
+                                    class="edit-mode"
+                                    type="date"
+                                    name="due_date"
+                                    value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}"
+                                    style="display:none;"
+                                >
+                            </div>
+
+                            <!-- Row 6 -->
+                            <div class="detail-label">
+                                Priority
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ task.priority }}</strong>
+                                <select
+                                    class="edit-mode"
+                                    name="priority"
+                                    style="display:none;"
+                                >
+                                    <option value="Low" {% if task.priority == 'Low' %}selected{% endif %}>Low</option>
+                                    <option value="Medium" {% if task.priority == 'Medium' %}selected{% endif %}>Medium</option>
+                                    <option value="High" {% if task.priority == 'High' %}selected{% endif %}>High</option>
+                                </select>
+                            </div>
+
+                            <!-- Row 7 -->
+                            <div class="detail-label">
+                                Status
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ task.status }}</strong>
+                                <select
+                                    class="edit-mode"
+                                    name="status"
+                                    style="display:none;"
+                                >
+                                    <option value="Open" {% if task.status == 'Open' %}selected{% endif %}>Open</option>
+                                    <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Completed" {% if task.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                    <option value="Closed" {% if task.status == 'Closed' %}selected{% endif %}>Closed</option>
+                                </select>
+                            </div>
+
+                            <!-- Row 8 -->
+                            <div class="detail-label">
+                                Created
+                            </div>
+                            <div>
+                                <strong>
+                                    {{ task.created_at.strftime('%b %d, %Y %H:%M') if task.created_at else '-' }}
+                                </strong>
+                            </div>
+
+                            <!-- Row 9 -->
+                            <div class="detail-label">
+                                Updated
+                            </div>
+                            <div>
+                                <strong>
+                                    {{ task.updated_at.strftime('%b %d, %Y %H:%M') if task.updated_at else '-' }}
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <!-- Bottom-right actions -->
+                        <div class="detail-actions">
+                            <button
+                                type="button"
+                                id="editBtn"
+                                onclick="enableEdit()"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                id="cancelBtn"
+                                onclick="cancelEdit()"
+                                style="display:none;"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="submit"
+                                id="updateBtn"
+                                style="display:none;"
+                            >
+                                Update
+                            </button>
+                        </div>
+                    </form>
+                </div> 
+            </div> 
+        </section>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="detail-side">
+        <section class="side-card phase-card">
+            <form method="POST" action="{{ url_for('tasks.change_status', task_id=task.id) }}" class="status-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="phase-select-container">
+                    <div class="phase-select-text">
+                        <strong>Status:</strong> {{ task.status }}
+                    </div>
+                    
+                    <select id="status" name="status" onchange="this.form.submit()" class="phase-select">
+                        {% for value in task_statuses %}
+                            <option value="{{ value }}" {% if value == task.status %}selected{% endif %}>
+                                {{ value }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </section>
+
+        <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button> 
+
+        <section class="side-card">
+            <form method="POST" action="{{ url_for('tasks.post_comment', task_id=task.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <textarea name="comment_text" rows="3" placeholder="Post comment..." required></textarea>
+                <button class="btn btn-primary btn-block" type="submit">Post</button>
+            </form>
+        </section>
+
+        <section class="side-card">
+            <h3>Activity</h3>
+            <ul class="side-list">
+                {% for activity in task.activities|sort(attribute='created_at', reverse=True) %}
+                <li>{{ activity.description }}<span>{{ activity.created_at.strftime('%b %d, %Y %H:%M') }}</span></li>
+                {% else %}
+                <li class="empty">No Activity</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="side-card">
+            <h3>Participants</h3>
+            <ul class="side-list">
+                {% for participant in task.participants %}
+                <li>{{ participant.name }} &mdash; {{ participant.role }}<span>{{ participant.email }}</span></li>
+                {% else %}
+                <li class="empty">No participants yet.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </aside>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="participant-modal">
+    <div class="modal-card">
+        <div class="modal-head"><h2>Add Participant</h2><button class="icon-btn" data-modal-close>&times;</button></div>
+        <form method="POST" action="{{ url_for('tasks.add_participant', task_id=task.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field"><label for="p-name">Name</label><input id="p-name" name="name" required></div>
+            <div class="field"><label for="p-email">Email</label><input id="p-email" name="email" type="email" required></div>
+            <div class="field">
+                <label for="p-role">Role</label>
+                <select id="p-role" name="role" required>
+                    {% for value in participant_roles %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
+                <button class="btn btn-primary" type="submit">Add Participant</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -2,16 +2,7 @@ from datetime import datetime
 
 from app.extensions import db
 
-MATTER_STATUSES = ["Draft", "Pending Allocation", "Open", "On Hold", "Closed"]
 MARKETS = ["Corporate", "Americas", "Europe", "Asia Pacific", "Australia"]
-AREAS_OF_LAW = [
-    "Corporate Legal",
-    "Employment",
-    "Litigation",
-    "Real Estate",
-    "Intellectual Property",
-    "Compliance",
-]
 MATTER_TYPES = [
     "Board of Directors",
     "Business disputes",

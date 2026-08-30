@@ -82,7 +82,74 @@
             </div>
         </div>
     </section>
-
+    <!-- ==================== VENDORS APP CARD ==================== -->
+    <section class="panel" style="margin-bottom: 24px;">
+        <div class="panel-header" style="border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 1.2rem; color: #1f51b5;">Vendors App</h2>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Row 1: Statuses -->
+            <div class="field" style="width: 100%;">
+                <label for="vendor_statuses" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Statuses <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('vendor_statuses') or 'None' }}
+                </div>
+                
+                <textarea id="vendor_statuses" name="vendor_statuses" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Active, Pending Review, Inactive">{{ settings.get('vendor_statuses', '') }}</textarea>
+            </div>
+            
+            <!-- Row 2: Roles -->
+            <div class="field" style="width: 100%;">
+                <label for="vendor_roles" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Roles <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('vendor_roles') or 'None' }}
+                </div>
+                
+                <textarea id="vendor_roles" name="vendor_roles" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Primary Contact, Billing, Account Manager">{{ settings.get('vendor_roles', '') }}</textarea>
+            </div>
+        </div>
+    </section>
+    <!-- ==================== VENDOR ASSIGNMENT APP CARD ==================== -->
+    <section class="panel" style="margin-bottom: 24px;">
+        <div class="panel-header" style="border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 1.2rem; color: #1f51b5;">Vendor Assignments to Matter App</h2>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Row 1: Statuses -->
+            <div class="field" style="width: 100%;">
+                <label for="vatm_statuses" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Statuses <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('vatm_statuses') or 'None' }}
+                </div>
+                
+                <textarea id="vatm_statuses" name="vatm_statuses" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Active, Pending, Terminated">{{ settings.get('vatm_statuses', '') }}</textarea>
+            </div>
+            
+            <!-- Row 2: Roles -->
+            <div class="field" style="width: 100%;">
+                <label for="vatm_roles" style="font-weight: bold; color: #333; font-size: 14px;">
+                    Roles <span class="text-muted" style="font-weight: normal; font-size: 12px;">(Comma separated)</span>
+                </label>
+                
+                <div class="view-mode" style="padding: 8px 0; color: #555; min-height: 20px;">
+                    {{ settings.get('vatm_roles') or 'None' }}
+                </div>
+                
+                <textarea id="vatm_roles" name="vatm_roles" class="form-control edit-mode" rows="2" style="display: none; width: 100%;" placeholder="e.g. Lead Counsel, Local Counsel, Expert">{{ settings.get('vatm_roles', '') }}</textarea>
+            </div>
+        </div>
+    </section>
     <!-- ==================== ACTION BUTTONS ==================== -->
     <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
         <!-- Default State: Just the Edit Button -->

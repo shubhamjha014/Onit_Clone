@@ -16,6 +16,7 @@ class Task(db.Model):
     due_date = db.Column(db.Date, nullable=True)
     priority = db.Column(db.String(20), nullable=False, default="Medium")
     status = db.Column(db.String(20), nullable=False, default="Open")
+    migrated = db.Column(db.Boolean, nullable=True, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow

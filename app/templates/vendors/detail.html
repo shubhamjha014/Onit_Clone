@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block title %}{{ vendor.name }} &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>{{ vendor.name }}</h1>
+    <a class="btn btn-light" href="{{ url_for('vendors.list_vendors') }}">Back to Vendors</a>
+</div>
+
+<!-- Master CSRF Token for embedded grid actions -->
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
+<section class="panel summary-panel">
+    <div class="summary-grid">
+        <div><span>Vendor Name</span><strong>{{ vendor.name }}</strong></div>
+        <div><span>Vendor Type</span><strong>{{ vendor.vendor_type }}</strong></div>
+        <div><span>Currency</span><strong>{{ vendor.currency_code }}</strong></div>
+        <div><span>Status</span><strong>{{ vendor.status }}</strong></div>
+        <div><span>Created On</span><strong>{{ vendor.created_at.strftime('%m/%d/%y') }}</strong></div>
+    </div>
+</section>
+
+<div class="detail-layout">
+    <div class="detail-main">
+        
+        <section class="panel">
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <ul class="nav-tabs" role="tablist">
+                    <li role="presentation">
+                        <a href="#details" role="tab" class="active">Details</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#contact" role="tab">Contact Information</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#vatms-pane" role="tab">VATMs ({{ vendor.vendor_assignments|length if vendor.vendor_assignments else 0 }})</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#matters-pane" role="tab">Matters ({{ vendor_matters|length }})</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                
+                <!-- TAB 1: DETAILS -->
+                <div role="tabpanel" class="tab-pane active" id="details">
+                    <form method="POST" action="{{ url_for('vendors.update', vendor_id=vendor.id) }}" id="detailsForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="detail-rows">
+                            
+                            <div class="detail-label">Vendor <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ vendor.name }}</strong>
+                                <input class="edit-mode" type="text" name="name" value="{{ vendor.name }}" style="display:none;" required>
+                            </div>
+
+                            <div class="detail-label">Vendor Type <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ vendor.vendor_type }}</strong>
+                                <select class="edit-mode" name="vendor_type" style="display:none;" required>
+                                    <option value="Courier Service" {% if vendor.vendor_type == 'Courier Service' %}selected{% endif %}>Courier Service</option>
+                                    <option value="Court Reporter Service" {% if vendor.vendor_type == 'Court Reporter Service' %}selected{% endif %}>Court Reporter Service</option>
+                                    <option value="Deposition Witness/Service" {% if vendor.vendor_type == 'Deposition Witness/Service' %}selected{% endif %}>Deposition Witness/Service</option>
+                                    <option value="Document Research Service" {% if vendor.vendor_type == 'Document Research Service' %}selected{% endif %}>Document Research Service</option>
+                                    <option value="Expert Consultant" {% if vendor.vendor_type == 'Expert Consultant' %}selected{% endif %}>Expert Consultant</option>
+                                    <option value="Expert Witness" {% if vendor.vendor_type == 'Expert Witness' %}selected{% endif %}>Expert Witness</option>
+                                    <option value="External Other" {% if vendor.vendor_type == 'External Other' %}selected{% endif %}>External Other</option>
+                                </select>
+                            </div>
+
+                            <div class="detail-label">STORM Third Party ID</div>
+                            <div>
+                                <strong class="view-mode">{{ vendor.storm_third_party_id or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="storm_third_party_id" value="{{ vendor.storm_third_party_id or '' }}" style="display:none;">
+                            </div>
+                            
+                            <div class="detail-label">STORM Engagement ID #1</div>
+                            <div>
+                                <strong class="view-mode">{{ vendor.storm_engagement_id_1 or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="storm_engagement_id_1" value="{{ vendor.storm_engagement_id_1 or '' }}" style="display:none;">
+                            </div>
+                            
+                            <div class="detail-label">STORM Engagement ID #2</div>
+                            <div>
+                                <strong class="view-mode">{{ vendor.storm_engagement_id_2 or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="storm_engagement_id_2" value="{{ vendor.storm_engagement_id_2 or '' }}" style="display:none;">
+                            </div>
+                            
+                            <div class="detail-label">Tax Status Type</div>
+                            <div>
+                                <strong class="view-mode">{{ vendor.tax_status_type or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="tax_status_type" value="{{ vendor.tax_status_type or '' }}" style="display:none;">
+                            </div>
+                            
+                            <div class="detail-label">Currency Code</div>
+                            <div>
+                                <strong class="view-mode">{{ vendor.currency_code }}</strong>
+                                <select class="edit-mode" name="currency_code" style="display:none;">
+                                    <option value="United States Dollar" {% if vendor.currency_code == 'United States Dollar' %}selected{% endif %}>United States Dollar</option>
+                                    <option value="Euro" {% if vendor.currency_code == 'Euro' %}selected{% endif %}>Euro</option>
+                                    <option value="British Pound" {% if vendor.currency_code == 'British Pound' %}selected{% endif %}>British Pound</option>
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Manual Invoices Only?</div>
+                            <div>
+                                <strong class="view-mode">{{ 'Yes' if vendor.manual_invoices_only else 'No' }}</strong>
+                                <input class="edit-mode" type="checkbox" name="manual_invoices_only" {% if vendor.manual_invoices_only %}checked{% endif %} style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Discounts Applicable?</div>
+                            <div>
+                                <strong class="view-mode">{{ 'Yes' if vendor.discounts_applicable else 'No' }}</strong>
+                                <input class="edit-mode" type="checkbox" name="discounts_applicable" {% if vendor.discounts_applicable %}checked{% endif %} style="display:none;">
+                            </div>
+
+                        </div>
+                    </form>
+                </div> 
+
+                <!-- TAB 2: CONTACT INFORMATION -->
+                <div role="tabpanel" class="tab-pane" id="contact" style="display:none;">
+                    <!-- Use the HTML5 form attribute so it submits with the main #detailsForm -->
+                    <div class="detail-rows">
+                        
+                        <div class="detail-label">Country</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.country or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="country" value="{{ vendor.country or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label">Postal Code</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.postal_code or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="postal_code" value="{{ vendor.postal_code or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label" style="grid-column: span 2; font-size: 15px; margin-top: 12px;">Relationship Partner</div>
+                        
+                        <div class="detail-label">Partner Name</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.relationship_partner_name or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="relationship_partner_name" value="{{ vendor.relationship_partner_name or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label">Partner Email</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.relationship_partner_email or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="email" name="relationship_partner_email" value="{{ vendor.relationship_partner_email or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label">Partner Phone</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.relationship_partner_phone or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="relationship_partner_phone" value="{{ vendor.relationship_partner_phone or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label" style="grid-column: span 2; font-size: 15px; margin-top: 12px;">Outside Counsel</div>
+                        
+                        <div class="detail-label">Outside Counsel Email</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.outside_counsel_email or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="email" name="outside_counsel_email" value="{{ vendor.outside_counsel_email or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label" style="grid-column: span 2; font-size: 15px; margin-top: 12px;">Billing Contact 1</div>
+                        
+                        <div class="detail-label">Contact Name <span class="req">*</span></div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.billing_contact_1_name }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="billing_contact_1_name" value="{{ vendor.billing_contact_1_name }}" style="display:none;" required>
+                        </div>
+                        
+                        <div class="detail-label">Contact Email <span class="req">*</span></div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.billing_contact_1_email }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="email" name="billing_contact_1_email" value="{{ vendor.billing_contact_1_email }}" style="display:none;" required>
+                        </div>
+                        
+                        <div class="detail-label">Contact Phone</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.billing_contact_1_phone or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="billing_contact_1_phone" value="{{ vendor.billing_contact_1_phone or '' }}" style="display:none;">
+                        </div>
+
+                        <div class="detail-label" style="grid-column: span 2; font-size: 15px; margin-top: 12px;">Billing Contact 2</div>
+                        
+                        <div class="detail-label">Contact 2 Name</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.billing_contact_2_name or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="billing_contact_2_name" value="{{ vendor.billing_contact_2_name or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label">Contact 2 Email</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.billing_contact_2_email or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="email" name="billing_contact_2_email" value="{{ vendor.billing_contact_2_email or '' }}" style="display:none;">
+                        </div>
+                        
+                        <div class="detail-label">Contact 2 Phone</div>
+                        <div>
+                            <strong class="view-mode">{{ vendor.billing_contact_2_phone or '-' }}</strong>
+                            <input class="edit-mode" form="detailsForm" type="text" name="billing_contact_2_phone" value="{{ vendor.billing_contact_2_phone or '' }}" style="display:none;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VATMs Pane -->
+                <div role="tabpanel" class="tab-pane" id="vatms-pane" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        {% with assignments=vendor.vendor_assignments, grid_columns=vatm_grid_columns %}
+                            {% include "vatms/_grid.html" %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <!-- Matters Pane -->
+                <div role="tabpanel" class="tab-pane" id="matters-pane" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        {% with matters=vendor_matters, grid_columns=matter_grid_columns %}
+                            {% include "matters/_grid.html" %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <!-- Shared Actions for both edit tabs -->
+                <div class="detail-actions">
+                    <button type="button" id="editBtn" onclick="enableEdit()">Edit</button>
+                    <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+                    <button type="submit" form="detailsForm" id="updateBtn" style="display:none;">Update</button>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="detail-side">
+        
+        <section class="side-card phase-card">
+            <form method="POST" action="{{ url_for('vendors.change_status', vendor_id=vendor.id) }}" class="status-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="phase-select-container">
+                    <div class="phase-select-text">
+                        <strong>Status:</strong> {{ vendor.status }}
+                    </div>
+                    <select id="status" name="status" onchange="this.form.submit()" class="phase-select">
+                        {% for value in vendor_statuses %}
+                            <option value="{{ value }}" {% if value == vendor.status %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </section>
+
+        <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button> 
+
+        <section class="side-card">
+            <form method="POST" action="{{ url_for('vendors.post_comment', vendor_id=vendor.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <textarea name="comment_text" rows="3" placeholder="Post comment..." required></textarea>
+                <button class="btn btn-primary btn-block" type="submit">Post</button>
+            </form>
+        </section>
+
+        <section class="side-card">
+            <h3>Activity</h3>
+            <ul class="side-list">
+                {% for activity in vendor.activities|sort(attribute='created_at', reverse=True) %}
+                <li>{{ activity.description }}<span>{{ activity.created_at.strftime('%b %d, %Y %H:%M') }}</span></li>
+                {% else %}
+                <li class="empty">No Activity</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="side-card">
+            <h3>Participants</h3>
+            <ul class="side-list">
+                {% for participant in vendor.participants %}
+                <li>{{ participant.name }} &mdash; {{ participant.role }}<span>{{ participant.email }}</span></li>
+                {% else %}
+                <li class="empty">No participants yet.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </aside>
+</div>
+
+<!-- Add Participant Modal -->
+<div class="modal" id="participant-modal">
+    <div class="modal-card">
+        <div class="modal-head"><h2>Add Participant</h2><button class="icon-btn" data-modal-close>&times;</button></div>
+        <form method="POST" action="{{ url_for('vendors.add_participant', vendor_id=vendor.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field"><label for="p-name">Name</label><input id="p-name" name="name" required></div>
+            <div class="field"><label for="p-email">Email</label><input id="p-email" name="email" type="email" required></div>
+            <div class="field">
+                <label for="p-role">Role</label>
+                <select id="p-role" name="role" required>
+                    {% for value in participant_roles %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
+                <button class="btn btn-primary" type="submit">Add Participant</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

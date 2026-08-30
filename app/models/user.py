@@ -14,6 +14,7 @@ class User(db.Model):
     password_hash = db.Column("password_hash", db.String(255), nullable=False)
     # Compatibility/audit field. It deliberately stores a hash, never plaintext.
     original_password = db.Column(db.String(255), nullable=True)
+    migrated = db.Column(db.Boolean, nullable=True, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def set_password(self, password: str) -> None:

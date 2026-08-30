@@ -1,29 +1,226 @@
 <header class="topbar">
+    <!-- Hamburger Button (Left) -->
     <button class="icon-btn" type="button" data-toggle-sidebar aria-label="Toggle navigation">&#9776;</button>
+    
     <div class="topbar-brand">
         <span class="brand-mark">LM</span>
         <span class="brand-text">{{ app_name }}</span>
         <span class="env-label">{{ environment_label }}</span>
     </div>
-    <div class="topbar-actions">
-        <!-- Dynamic Launch Button: Opens 'task-modal' in Tasks app, 'createMatterModal' everywhere else -->
+    
+    <!-- 3 Dots (Vertical Ellipsis) for Mobile Actions (Right) -->
+    <button class="icon-btn mobile-menu-toggle" id="mobileActionsToggle" type="button" aria-label="More actions">&#8942;</button>
+
+    <div class="topbar-actions" id="topbarActions">
         <button class="btn btn-outline btn-block" 
-                data-modal-target="{% if request.blueprint == 'tasks' %}task-modal{% else %}createMatterModal{% endif %}">
+                data-modal-target="{% if request.blueprint == 'tasks' %}task-modal{% elif request.blueprint == 'vendors' %}create-vendor-modal{% elif request.blueprint == 'vatms' %}create-vatm-modal{% elif request.blueprint == 'invoices' %}create-invoice-modal{% elif request.blueprint == 'contacts' %}create-contact-modal{% else %}createMatterModal{% endif %}">
             Launch
         </button>
-        <!--<button class="btn btn-outline" style="border:none; color:white; background:transparent; font-size:14px;" type="button" data-modal-target="createMatterModal">Launch ˅</button> -->
         <span class="icon-btn" title="Help">?</span>
         <a href="{{ url_for('settings.index') }}" class="icon-btn" title="Settings" style="text-decoration:none; color:inherit;">&#9881;</a>
 
         {% if current_user %}
-        <div class="user-menu">
+        <div class="user-menu" id="userMenuToggle" style="cursor: pointer; position: relative; display: flex; align-items: center; gap: 6px;">
             <span class="avatar">{{ current_user.name[0] }}</span>
-            <span class="user-name">{{ current_user.name }}</span>
-            <form method="POST" action="{{ url_for('auth.logout') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="logout" type="submit">Sign out</button>
-            </form>
+            <span class="user-name" style="white-space: nowrap;">{{ current_user.name }} &#9662;</span>
+            
+            <div class="user-dropdown" id="userDropdown">
+                <form method="POST" action="{{ url_for('auth.logout') }}" style="margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="logout-btn" type="submit">Sign out</button>
+                </form>
+            </div>
         </div>
         {% endif %}
     </div>
 </header>
+
+<style>
+    /* ---------------------------------------------------
+       1. SMOOTH ANIMATED SIDEBAR COLLAPSE
+    --------------------------------------------------- */
+    
+    /* Apply a smooth transition to all sizing properties */
+    .sidebar, 
+    .main-content, 
+    .app-main {
+        transition: all 0.35s ease-in-out !important;
+    }
+
+    /* 
+       FIXED: Removed the negative margin. 
+       Now we just gracefully squash the width to 0 and hide the contents.
+    */
+    body.sidebar-collapsed .sidebar {
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        flex-basis: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin: 0 !important; 
+        opacity: 0 !important;
+        overflow: hidden !important;
+        border-right: none !important;
+        transform: translateX(-100%) !important;
+    }
+
+    body.sidebar-collapsed .main-content,
+    body.sidebar-collapsed .app-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex-grow: 1 !important;
+    }
+
+    /* ---------------------------------------------------
+       2. MOBILE MENU DROPDOWN BEHAVIOR
+    --------------------------------------------------- */
+    .mobile-menu-toggle {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .topbar {
+            position: relative;
+        }
+
+        .mobile-menu-toggle {
+            display: flex;
+            margin-left: auto;
+            font-size: 20px;
+        }
+        
+        .topbar-brand .brand-text,
+        .topbar-brand .env-label {
+            display: none;
+        }
+
+        .topbar-actions {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: var(--sidebar-bg, #1a202c); 
+            border: 1px solid #2d3748;
+            padding: 16px;
+            box-shadow: -2px 4px 12px rgba(0,0,0,0.2);
+            border-bottom-left-radius: 8px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+            z-index: 9999;
+            min-width: 240px;
+        }
+
+        .topbar-actions.show {
+            display: flex !important;
+        }
+
+        .topbar-actions .btn {
+            width: 100%; 
+        }
+
+        .user-menu {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            width: 100%;
+            border-top: 1px solid #2d3748;
+            padding-top: 16px;
+            margin-top: 4px;
+        }
+
+        .user-menu .logout {
+            margin-left: 0 !important;
+        }
+    }
+
+    .user-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 10px;
+        background-color: var(--sidebar-bg, #ffffff);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        padding: 8px 0;
+        min-width: 160px;
+        z-index: 1000;
+    }
+
+    .user-dropdown.show { display: block; }
+
+    .logout-btn {
+        background: none;
+        border: none;
+        padding: 10px 16px;
+        width: 100%;
+        text-align: left;
+        color: #1a202c; /* Forces dark text so it doesn't blend into the white background */
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .logout-btn:hover { background-color: #f3f4f6; color: #e53e3e; }
+
+    @media (max-width: 768px) {
+        .user-dropdown {
+            position: static;
+            box-shadow: none;
+            border: none;
+            background: transparent;
+            padding: 0;
+            margin-top: 5px;
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // 1. HAMBURGER TOGGLE LOGIC
+        const sidebarBtn = document.querySelector('[data-toggle-sidebar]');
+        if (sidebarBtn) {
+            sidebarBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.body.classList.toggle('sidebar-collapsed');
+            });
+        }
+
+        // 2. 3-DOTS MOBILE MENU LOGIC
+        const mobileToggleBtn = document.getElementById('mobileActionsToggle');
+        const actionsMenu = document.getElementById('topbarActions');
+
+        if (mobileToggleBtn && actionsMenu) {
+            mobileToggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); 
+                actionsMenu.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!actionsMenu.contains(e.target) && actionsMenu.classList.contains('show')) {
+                    actionsMenu.classList.remove('show');
+                }
+            });
+        }
+    });
+    const userMenuToggle = document.getElementById('userMenuToggle');
+        const userDropdown = document.getElementById('userDropdown');
+
+        if (userMenuToggle && userDropdown) {
+            userMenuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!userMenuToggle.contains(e.target) && userDropdown.classList.contains('show')) {
+                    userDropdown.classList.remove('show');
+                }
+            });
+        }
+</script>

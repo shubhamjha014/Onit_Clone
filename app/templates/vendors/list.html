@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Vendors &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>Vendors</h1>
+    <button class="btn btn-primary" type="button" data-modal-target="create-vendor-modal">Create New Vendor</button>
+</div>
+
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
+<!-- Inject the complete modular grid -->
+{% include "vendors/_grid.html" %}
+
+<!-- Keep the create form modal so functionality remains perfectly intact -->
+{% include "vendors/form.html" %}
+
+{% endblock %}

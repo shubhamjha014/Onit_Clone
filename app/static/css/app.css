@@ -883,3 +883,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #bcd0f7; border-c
 .form-actions-spaced {
     margin-top: 16px;
 }
+/* Generic wrapper to add breathing room to embedded grids/tables inside tabs */
+.tab-embedded-grid {
+    padding: 24px;
+    background-color: transparent;
+}

@@ -1,0 +1,174 @@
+<!-- Toolbar Layout -->
+<div class="list-toolbar">
+    <div class="toolbar-left bulk-action-dropdown" style="position: relative;">
+        <button class="btn-action bulk-action-btn" type="button" disabled>
+            Actions <span style="font-size: 10px;">▼</span>
+        </button>
+        <div class="dropdown-menu hidden" style="position: absolute; top: calc(100% + 4px); left: 0; background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 100; min-width: 140px;">
+            <a href="#" data-bulk-action="delete" style="display: block; padding: 8px 16px; color: #e74c3c; font-size: 13px; text-decoration: none;">Delete Selected</a>
+        </div>
+    </div>
+
+    <div class="toolbar-right">
+        <button class="toolbar-btn clear-all-filters-btn" disabled style="opacity: 0.5; transition: opacity 0.2s;">
+            <span style="color: #e74c3c; font-weight: bold; margin-right: 4px; font-size: 14px;">✕</span> Clear Filter
+        </button>
+        
+        <div class="filter-type-group">Filter type <span class="filter-type-info">ⓘ</span></div>
+        <div class="segmented-control">
+            <button type="button" class="segmented-btn active">Simple</button>
+            <button type="button" class="segmented-btn" style="border-left: 1px solid #4a5568;">Advanced</button>
+        </div>
+
+        <button class="toolbar-btn ajaxRefreshBtn">
+            <span class="refresh-icon" style="font-size: 16px; line-height: 1;">↻</span> Refresh
+        </button>
+
+        <!-- Added Export Dropdown to match other grids -->
+        <div style="position: relative; display: inline-block;">
+            <button class="toolbar-btn export-btn" type="button">
+                Export <span style="font-size: 10px;">▼</span>
+            </button>
+            <div class="dropdown-menu hidden" style="position: absolute; top: calc(100% + 4px); right: 0; background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 0; z-index: 100; min-width: 170px;">
+                <a href="#" onclick="exportTableToCSV('vendors_export.csv', false); return false;" style="display: block; padding: 8px 16px; color: #333; font-size: 13px; text-decoration: none;">Download as CSV</a>
+                <a href="#" onclick="exportTableToCSV('vendors_export_excel.csv', true); return false;" style="display: block; padding: 8px 16px; color: #333; font-size: 13px; text-decoration: none;">Download for Excel</a>
+            </div>
+        </div>
+        
+        <button class="toolbar-btn toolbar-btn-bold" data-modal-target="select-cols-modal">
+            Select Fields
+        </button>
+    </div>
+</div>
+
+<!-- Table Container -->
+<div class="table-container" data-delete-url="{{ url_for('vendors.bulk_delete') }}">
+    <section class="panel" style="overflow-x: auto;">
+        <table class="table" data-bulk-toolbar=".list-toolbar">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;"><input type="checkbox" class="bulk-select-all"></th>
+                    {% for col in grid_columns %}
+                        <th data-col="{{ col.label }}" {% if not col.default %}style="display:none;"{% endif %}>{{ col.label }}</th>
+                    {% endfor %}
+                </tr>
+                <tr class="table-filter-row">
+                    <th></th>
+                    {% for col in grid_columns %}
+                        <th {% if not col.default %}style="display:none;"{% endif %}><div class="table-filter-line"><span class="filter-icon">≚</span></div></th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for vendor in vendors %}
+                <tr>
+                    <td style="text-align: center;"><input type="checkbox" class="bulk-select-row" value="{{ vendor.id }}"></td>
+                    
+                    {% for col in grid_columns %}
+                        <td {% if not col.default %}style="display:none;"{% endif %}>
+                            {% set val = vendor|attr(col.key) %}
+                            {% if col.type == 'link' %}
+                                <a href="{{ url_for('vendors.vendor_detail', vendor_id=vendor.id) }}">{{ val }}</a>
+                            {% elif col.type == 'badge' %}
+                                {% with status = vendor.status %}{% include "components/status_badge.html" %}{% endwith %}
+                            {% elif col.type == 'date' %}
+                                {{ val.strftime('%m/%d/%y') if val else '-' }}
+                            {% elif col.type == 'boolean' %}
+                                {{ 'Yes' if val else 'No' }}
+                            {% else %}
+                                {{ val or '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% else %}
+                <tr><td colspan="{{ grid_columns|length + 1 }}" class="empty">No vendors match your filters.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if pagination is defined %}
+            {% include "components/pagination.html" %}
+        {% endif %}
+    </section>
+</div>
+
+<!-- Generic Bulk Action Confirmation Modal -->
+<div class="modal bulk-confirm-modal">
+    <div class="modal-card" style="max-width: 450px;">
+        <div class="modal-head"><h2>Confirm Action</h2><button class="icon-btn" type="button" data-modal-close>&times;</button></div>
+        <div style="padding-bottom: 24px; font-size: 14px; color: #444; line-height: 1.5;">Do you really want to perform this bulk action? This process cannot be undone.</div>
+        <div class="form-actions" style="justify-content: flex-end; display: flex; gap: 10px;">
+            <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
+            <button class="btn btn-primary confirm-bulk-btn" type="button">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Select Columns Modal -->
+<div class="modal select-cols-modal">
+    <div class="select-cols-modal-inner">
+        <div class="select-cols-header">
+            Select Fields
+            <button type="button" class="icon-btn" data-modal-close style="color: #fff; font-size: 24px; line-height: 1;">&times;</button>
+        </div>
+        <div class="select-cols-subheader">Choose columns to show on the grid and drag to reorder</div>
+        
+        <div class="select-cols-body">
+            
+            <!-- Left Side: ALL DB FIELDS -->
+            <div class="select-cols-left">
+                <label class="col-header-title">
+                    <input type="checkbox" id="select-all-fields-cb" style="margin: 0 8px 0 0;"> ALL FIELDS
+                </label>
+                <div class="search-box">
+                    <span class="icon">⌕</span>
+                    <input type="text" class="field-search-input" placeholder="Search for a field">
+                </div>
+                
+                <div class="field-list" id="all-fields-list">
+                    {% for col in grid_columns|sort(attribute='label') %}
+                    <label class="field-item" data-field="{{ col.label }}">
+                        <input type="checkbox" {% if col.default %}checked{% endif %}> {{ col.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Side: SHOW ON GRID -->
+            <div class="select-cols-right">
+                <div class="col-header-title">SHOW ON GRID</div>
+                <div class="search-box">
+                    <span class="icon">⌕</span>
+                    <input type="text" class="field-search-input" placeholder="Search for a field">
+                </div>
+                
+                <div class="field-list" id="show-on-grid-list">
+                    {% for col in grid_columns %}
+                        {% if col.default %}
+                        <div class="selected-field-item" data-field="{{ col.label }}">
+                            <div class="selected-field-item-left"><span class="drag-handle">⋮⋮</span> {{ col.label }}</div>
+                            <span class="remove-btn">&times;</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="right-bottom-settings">
+                    <div class="setting-group">
+                        <label>Group By:</label>
+                        <select><option>(none)</option></select>
+                    </div>
+                    <div style="font-size: 13px; color: #333; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" style="margin: 0;" checked> Truncate Data in Cells
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="select-cols-footer">
+            <button type="button" class="btn btn-light" data-modal-close>Cancel</button>
+            <button type="button" class="btn-apply btn-primary">Apply Changes</button>
+        </div>
+    </div>
+</div>

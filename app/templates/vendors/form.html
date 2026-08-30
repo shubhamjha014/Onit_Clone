@@ -1,0 +1,95 @@
+<!-- CREATE VENDOR MODAL -->
+<div class="modal" id="create-vendor-modal">
+    <div class="launch-modal-card">
+        <div class="launch-modal-head">
+            <h2>Create New Vendor</h2>
+            <button class="icon-btn" type="button" data-modal-close aria-label="Close">&times;</button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('vendors.new_vendor') }}" style="display: flex; flex-direction: column; margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="launch-modal-body">
+                <div class="launch-field">
+                    <label for="name">Vendor <span class="req">*</span></label>
+                    <input id="name" name="name" required placeholder="Vendor is required">
+                </div>
+                
+                <div class="launch-field">
+                    <label for="vendor_type">Vendor Type <span class="req">*</span></label>
+                    <select id="vendor_type" name="vendor_type" required>
+                        <option value="" disabled selected>Select type...</option>
+                        <option value="Law Firm">Law Firm</option>
+                        <option value="Courier Service">Courier Service</option>
+                        <option value="Court Reporter Service">Court Reporter Service</option>
+                        <option value="Deposition Witness/Service">Deposition Witness/Service</option>
+                        <option value="Document Research Service">Document Research Service</option>
+                        <option value="Expert Consultant">Expert Consultant</option>
+                        <option value="Expert Witness">Expert Witness</option>
+                        <option value="External Other">External Other</option>
+                    </select>
+                </div>
+
+                <div class="launch-field">
+                    <label for="storm_third_party_id">STORM Third Party ID</label>
+                    <input id="storm_third_party_id" name="storm_third_party_id">
+                </div>
+
+                <div class="launch-field">
+                    <label for="storm_engagement_id_1">STORM Engagement ID #1</label>
+                    <input id="storm_engagement_id_1" name="storm_engagement_id_1">
+                </div>
+
+                <div class="launch-field">
+                    <label for="storm_engagement_id_2">STORM Engagement ID #2</label>
+                    <input id="storm_engagement_id_2" name="storm_engagement_id_2">
+                </div>
+
+                <div class="launch-field">
+                    <label for="tax_status_type">Tax Status Type</label>
+                    <input id="tax_status_type" name="tax_status_type">
+                </div>
+
+                <div class="launch-field">
+                    <label for="currency_code">Currency Code</label>
+                    <select id="currency_code" name="currency_code">
+                        <option value="United States Dollar">United States Dollar</option>
+                        <option value="Euro">Euro</option>
+                        <option value="British Pound">British Pound</option>
+                    </select>
+                </div>
+
+                <div class="launch-field" style="align-items: start;">
+                    <label>Manual Invoices Only?</label>
+                    <div>
+                        <input type="checkbox" name="manual_invoices_only" style="width: auto;">
+                        <span style="font-size: 11px; color: #666; margin-left: 8px;">*Must be checked true if this is a Manual Vendor or you will not be able to submit</span>
+                    </div>
+                </div>
+
+                <div class="launch-field">
+                    <label>Discounts Applicable?</label>
+                    <input type="checkbox" name="discounts_applicable" style="width: auto;">
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;">
+                <h3 style="font-size: 14px; margin-bottom: 16px;">Primary Billing Contact</h3>
+
+                <div class="launch-field">
+                    <label for="bc1_name">Billing Contact Name <span class="req">*</span></label>
+                    <input id="bc1_name" name="billing_contact_1_name" required>
+                </div>
+
+                <div class="launch-field">
+                    <label for="bc1_email">Billing Contact Email <span class="req">*</span></label>
+                    <input id="bc1_email" name="billing_contact_1_email" type="email" required>
+                </div>
+            </div>
+            
+            <div class="launch-modal-footer">
+                <button class="btn btn-light" type="button" data-modal-close style="margin-right: 10px;">Cancel</button>
+                <button class="btn-submit" type="submit" style="background-color: #f1c40f; color: #333;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>

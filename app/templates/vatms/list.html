@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Vendor Assignments to Matter &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>Vendor Assignments to Matter</h1>
+</div>
+
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
+<!-- Inject the shared Data Grid -->
+{% include "vatms/_grid.html" %}
+
+<!-- Inject the Assignment Form -->
+{% include "vatms/form.html" %}
+{% endblock %}

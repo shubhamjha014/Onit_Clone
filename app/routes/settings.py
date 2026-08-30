@@ -134,6 +134,10 @@ def app_settings():
                     app_name = "Matters"
                 elif key.startswith("task"):
                     app_name = "Tasks"
+                elif key.startswith("vendor"):
+                    app_name = "Vendors"
+                elif key.startswith("vatm"):
+                    app_name = "Vendor Assignments to Matter"
                 else:
                     app_name = "General"
                     

@@ -38,9 +38,11 @@ class Matter(db.Model):
     legal_entity = db.Column(db.String(120), nullable=False)
     currency = db.Column(db.String(60), nullable=False)
     payment_method = db.Column(db.String(60), nullable=True)
+    primary_line_of_business = db.Column(db.String(120), nullable=True)
     invoice_total = db.Column(db.Numeric(14, 2), nullable=False, default=0)
     total_budget = db.Column(db.Numeric(14, 2), nullable=False, default=0)
     status = db.Column(db.String(40), nullable=False, default="Draft")
+    migrated = db.Column(db.Boolean, nullable=True, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -61,6 +63,9 @@ class Matter(db.Model):
     )
     invoices = db.relationship("Invoice", back_populates="matter", cascade="all, delete-orphan")
     tasks = db.relationship("Task", back_populates="matter", cascade="all, delete-orphan")
+    vendor_assignments = db.relationship(
+        "VendorAssignmentToMatter", back_populates="matter", cascade="all, delete-orphan"
+    )
 
     @property
     def matter_email(self) -> str:

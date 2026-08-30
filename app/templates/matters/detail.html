@@ -6,6 +6,8 @@
     <a class="btn btn-light" href="{{ url_for('matters.list_matters') }}">Back to Matters</a>
 </div>
 
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
 <section class="panel summary-panel">
     <div class="summary-grid">
         <div><span>Matter Name</span><strong>{{ matter.matter_name }}</strong></div>
@@ -38,11 +40,13 @@
                         <a href="#allocations" role="tab">Allocations ({{ matter.allocations|length }})</a>
                     </li>
                     <li role="presentation">
-                        <a href="#invoices" role="tab">Invoices ({{ matter.invoices|length }})</a>
-                    </li>
-                    <li role="presentation">
                         <a href="#tasks" role="tab">Tasks ({{ matter.tasks|length }})</a>
                     </li>
+                    <li role="presentation">
+                        <a href="#vendors" role="tab">Vendors ({{ matter.vendor_assignments|length }})</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#invoices-pane" role="tab">Invoices ({{ matter.invoices|length }})</a></li>
                 </ul>
             </div>
 
@@ -75,6 +79,19 @@
                                 <input class="edit-mode" type="text" name="region" value="{{ matter.region or '' }}" style="display:none;">
                             </div>
 
+                            <div class="detail-label">
+                                Primary Line of Business <span class="req">*</span>
+                            </div>
+                            <div>
+                                <strong class="view-mode">{{ matter.primary_line_of_business or '-' }}</strong>
+                                <select class="edit-mode" name="primary_line_of_business" style="display:none;" required>
+                                    <option value="">Select a line of business</option>
+                                    {% for lob in lines_of_business %}
+                                        <option value="{{ lob }}" {% if matter.primary_line_of_business == lob %}selected{% endif %}>{{ lob }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
                             <!-- Row 3 -->
                             <div class="detail-label">
                                 Matter Currency
@@ -95,9 +112,13 @@
 
                         <!-- Bottom-right actions -->
                         <div class="detail-actions">
+                            {% if is_editable %}
                             <button type="button" id="editBtn" onclick="enableEdit()">Edit</button>
                             <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
                             <button type="submit" id="updateBtn" style="display:none;">Update</button>
+                            {% else %}
+                            <span style="color: #666; font-weight: 500; font-size: 13px; font-style: italic;">(View Only Mode)</span>
+                            {% endif %}
                         </div>
                     </form>
                 </div>
@@ -129,99 +150,91 @@
                 </div>
 
                 <!-- Invoices Pane -->
-                <div role="tabpanel" class="tab-pane" id="invoices" style="display: none;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Invoice Number</th>
-                                <th>Vendor</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for invoice in matter.invoices %}
-                            <tr>
-                                <td><a href="{{ url_for('invoices.invoice_detail', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a></td>
-                                <td>{{ invoice.vendor_name }}</td>
-                                <td>{{ '%.2f' | format(invoice.amount or 0) }}</td>
-                                <td>{% with status = invoice.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="4" class="empty">No invoices linked to this matter.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div role="tabpanel" class="tab-pane" id="invoices-pane" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        {% with invoices=matter.invoices, grid_columns=invoice_grid_columns %}
+                            {% include "invoices/_grid.html" %}
+                        {% endwith %}
+                    </div>
                 </div>
                 <!-- Tasks Pane -->
                 <div role="tabpanel" class="tab-pane" id="tasks" style="display: none;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Task Name</th>
-                                <th>Description</th>
-                                <th>Priority</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for task in matter.tasks %}
-                            <tr>
-                                <td><a href="{{ url_for('tasks.task_detail', task_id=task.id) }}">{{ task.title }}</a></td>
-                                <td>{{ task.description or '-' }}</td>
-                                <td>{{ task.priority }}</td>
-                                <td>{% with status = task.status %}{% include "components/status_badge.html" %}{% endwith %}</td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="4" class="empty">No tasks linked to this matter.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="tab-embedded-grid">
+                        {% with tasks=matter.tasks, grid_columns=task_grid_columns %}
+                            {% include "tasks/_grid.html" %}
+                        {% endwith %}
+                    </div>
                 </div>
-
+                <!-- Vendors Pane -->
+                <!-- Vendors Pane -->
+                <div role="tabpanel" class="tab-pane" id="vendors" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        {% with assignments=matter.vendor_assignments, grid_columns=vatm_grid_columns %}
+                            {% include "vatms/_grid.html" %}
+                        {% endwith %}
+                    </div>
+                    
+                </div>
             </div>
         </section>
     </div>
 
     <!-- SIDEBAR -->
     <aside class="detail-side">
+        
         <section class="side-card phase-card">
             <form method="POST" action="{{ url_for('matters.change_status', matter_id=matter.id) }}" class="status-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <div class="phase-select-container">
-                    
                     <div class="phase-select-text">
                         <strong>Phase:</strong> {{ matter.status }}
                     </div>
                     
-                    <select id="status" name="status" onchange="this.form.submit()" class="phase-select">
+                    <select id="status" name="status" onchange="this.form.submit()" class="phase-select" {% if not is_editable %}disabled{% endif %}>
                         {% for value in statuses %}
                             <option value="{{ value }}" {% if value == matter.status %}selected{% endif %}>
                                 Phase: {{ value }}
                             </option>
                         {% endfor %}
                     </select>
-                    
                 </div>
             </form>
         </section>
 
-        <!-- Corrected Allocation Modal Target -->
-        <button class="btn btn-outline btn-block" data-modal-target="allocation-modal">Add Allocation</button>
-        <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button> 
+        {% if is_editable %}
+            <button class="btn btn-outline btn-block" data-modal-target="allocation-modal">Add Allocation</button>
+            <button class="btn btn-outline btn-block" data-modal-target="create-vatm-modal">Assign Vendor</button>
+            <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button> 
 
-        <div class="more-actions-wrapper" id="more-actions-btn">
-            <button type="button" class="btn btn-outline btn-block" id="more-actions-toggle">More Actions</button>
-            <div class="more-actions-dropdown" id="more-actions-menu">
-                <button type="button"
-                    class="more-action-item"
-                    data-modal-target="task-modal">
-                    Create Task
-                </button>
-                <a href="{{ url_for('invoices.new_invoice') }}" class="more-actions-menu">Create Invoice</a>
+            <div class="more-actions-wrapper" id="more-actions-btn">
+                <button type="button" class="btn btn-outline btn-block" id="more-actions-toggle">More Actions</button>
+                <div class="more-actions-dropdown" id="more-actions-menu">
+                    <button type="button" class="more-action-item" data-modal-target="task-modal">
+                        Create Task
+                    </button>
+                    <!-- Close Matter Form -->
+                    <form method="POST" action="{{ url_for('matters.change_status', matter_id=matter.id) }}" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="Closed">
+                        <button type="submit" class="more-action-item">
+                            Close Matter
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
+        {% else %}
+            <!-- Standalone Reopen Matter Button -->
+            {% if matter.status == 'Closed' %}
+                <form method="POST" action="{{ url_for('matters.change_status', matter_id=matter.id) }}" style="margin: 0; width: 100%; margin-bottom: 16px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="status" value="Pending Allocation">
+                    <button type="submit" class="btn btn-outline btn-block">
+                        Reopen Matter
+                    </button>
+                </form>
+            {% endif %}
+        {% endif %}
 
         <section class="side-card">
             <form method="POST" action="{{ url_for('matters.post_comment', matter_id=matter.id) }}">
@@ -252,6 +265,7 @@
                 {% endfor %}
             </ul>
         </section>
+        
     </aside>
 </div>
 
@@ -278,7 +292,11 @@
 </div>
 
 <!-- Inject the standalone allocation modal file here -->
+{% set fixed_matter_id = matter.id %}
+{% with statuses=invoice_choices.statuses, matters=invoice_choices.matters, vendors=invoice_choices.vendors, currencies=invoice_choices.currencies %}
+    {% include "invoices/form.html" %}
+{% endwith %}
 {% include "components/create_allocation_modal.html" %}
 {% include "tasks/form.html" %}
-
+{% include "vatms/form.html" %}
 {% endblock %}

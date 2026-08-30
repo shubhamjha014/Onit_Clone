@@ -84,6 +84,16 @@
                         {% for value in matter_form_choices.legal_entities %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
                     </select>
                 </div>
+
+                <div class="launch-field">
+                    <label for="primary_line_of_business">Primary Line of Business <span class="req">*</span></label>
+                    <select id="primary_line_of_business" name="primary_line_of_business" required>
+                        <option value="">Select a line of business</option>
+                        {% for value in lines_of_business %}
+                            <option value="{{ value }}">{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 
                 <div class="launch-field">
                     <label for="currency">Matter Currency <span class="req">*</span></label>

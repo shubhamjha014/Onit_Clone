@@ -1,0 +1,130 @@
+<!-- DYNAMIC CONTEXT SETUP -->
+{% set is_matter_context = matter is defined and matter.id %}
+{% set is_vendor_context = vendor is defined and vendor.id %}
+{% set form_action = url_for('vatms.update_assignment', assignment_id=assignment.id) if assignment else url_for('vatms.new_assignment') %}
+
+<div class="modal" id="create-vatm-modal">
+    <div class="launch-modal-card">
+        <div class="launch-modal-head">
+            <h2>{{ 'Edit Assignment' if assignment else 'Assign Vendor to Matter' }}</h2>
+            <button class="icon-btn" type="button" data-modal-close aria-label="Close">&times;</button>
+        </div>
+        
+        <form method="POST" action="{{ form_action }}" style="display: flex; flex-direction: column; margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="launch-modal-body">
+                
+                <!-- ROW 1: MATTER ID -->
+                <div class="launch-field">
+                    <label for="matter_id">Matter <span class="req">*</span></label>
+                    {% if is_matter_context %}
+                        <!-- Readonly if launched from Matter app -->
+                        <input type="text" value="{{ matter.matter_number }} &mdash; {{ matter.matter_name }}" readonly style="background-color: #f5f5f5; color: #666; cursor: not-allowed;">
+                        <input type="hidden" name="matter_id" value="{{ matter.id }}">
+                    {% else %}
+                        <!-- Dropdown if launched from Vendor or VATM app -->
+                        <select id="matter_id" name="matter_id" required>
+                            <option value="">Select a matter...</option>
+                            {% for m in matters %}
+                            <option value="{{ m.id }}" {% if assignment and assignment.matter_id == m.id %}selected{% endif %}>{{ m.matter_number }} &mdash; {{ m.matter_name }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                </div>
+
+                <!-- ROW 2: VENDOR ID -->
+                <div class="launch-field">
+                    <label for="vendor_id">Panel Law Firm (Vendor) <span class="req">*</span></label>
+                    {% if is_vendor_context %}
+                        <!-- Readonly if launched from Vendor app -->
+                        <input type="text" value="{{ vendor.name }}" readonly style="background-color: #f5f5f5; color: #666; cursor: not-allowed;">
+                        <input type="hidden" name="vendor_id" value="{{ vendor.id }}">
+                    {% else %}
+                        <!-- Dropdown if launched from Matter or VATM app -->
+                        <select id="vendor_id" name="vendor_id" required>
+                            <option value="">Select a vendor...</option>
+                            {% for v in vendors %}
+                            <option value="{{ v.id }}" {% if assignment and assignment.vendor_id == v.id %}selected{% endif %}>{{ v.name }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                </div>
+
+                <div class="launch-field">
+                    <label for="division_law_firm_panel">Division Law Firm Panel</label>
+                    <input id="division_law_firm_panel" name="division_law_firm_panel" value="{{ assignment.division_law_firm_panel if assignment else '' }}">
+                </div>
+
+                <div class="launch-field">
+                    <label>Custom International Panel?</label>
+                    <input type="checkbox" name="custom_international_panel" {% if assignment and assignment.custom_international_panel %}checked{% endif %} style="width: auto;">
+                </div>
+
+                <div class="launch-field">
+                    <label for="funding_type">Funding Types <span class="req">*</span></label>
+                    <select id="funding_type" name="funding_type" required>
+                        <option value="">Select type...</option>
+                        {% for type in funding_types %}
+                        <option value="{{ type }}" {% if assignment and assignment.funding_type == type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="launch-field" style="align-items: start;">
+                    <label>Panel Law Firms Only?</label>
+                    <div>
+                        <!-- Defaults to checked per your screenshot -->
+                        <input type="checkbox" name="panel_law_firms_only" {% if not assignment or assignment.panel_law_firms_only %}checked{% endif %} style="width: auto;">
+                        <span style="font-size: 11px; color: #666; margin-left: 8px;">*Deselect to pick Vendors not classified as a Law Firm</span>
+                    </div>
+                </div>
+
+                <div class="launch-field">
+                    <label for="vendor_role">Vendor Role <span class="req">*</span></label>
+                    <select id="vendor_role" name="vendor_role" required>
+                        <option value="">Select role...</option>
+                        {% for role in roles %}
+                        <option value="{{ role }}" {% if assignment and assignment.vendor_role == role %}selected{% endif %}>{{ role }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="launch-field">
+                    <label for="default_vendor_gl_account_number">Default Vendor GL Account Number <span class="req">*</span></label>
+                    <select id="default_vendor_gl_account_number" name="default_vendor_gl_account_number" required>
+                        <option value="">Select GL Account...</option>
+                        {% for gl in gl_accounts %}
+                        <option value="{{ gl }}" {% if assignment and assignment.default_vendor_gl_account_number == gl %}selected{% endif %}>{{ gl }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="launch-field">
+                    <label for="syndicate_fixed_fee_amount">Syndicate Fixed Fee Amount</label>
+                    <input type="number" step="0.01" id="syndicate_fixed_fee_amount" name="syndicate_fixed_fee_amount" value="{{ assignment.syndicate_fixed_fee_amount if assignment else '' }}">
+                </div>
+
+                <div class="launch-field">
+                    <label>Subcontractor?</label>
+                    <input type="checkbox" name="subcontractor" {% if assignment and assignment.subcontractor %}checked{% endif %} style="width: auto;">
+                </div>
+
+                <div class="launch-field">
+                    <label for="fee_arrangement_value">Fee Arrangement Value <span class="req">*</span></label>
+                    <select id="fee_arrangement_value" name="fee_arrangement_value" required>
+                        <option value="">Select fee arrangement...</option>
+                        {% for fee in fee_arrangements %}
+                        <option value="{{ fee }}" {% if assignment and assignment.fee_arrangement_value == fee %}selected{% endif %}>{{ fee }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="launch-modal-footer">
+                <button class="btn btn-light" type="button" data-modal-close style="margin-right: 10px;">Cancel</button>
+                <button class="btn-submit" type="submit" style="background-color: #f1c40f; color: #333;">Assign Vendor</button>
+            </div>
+        </form>
+    </div>
+</div>

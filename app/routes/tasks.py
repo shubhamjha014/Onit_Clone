@@ -20,6 +20,7 @@ GRID_COLUMNS = [
     {"key": "due_date", "label": "Due Date", "default": True, "type": "date"},
     {"key": "priority", "label": "Priority", "default": True, "type": "text"},
     {"key": "status", "label": "Status", "default": True, "type": "badge"},
+    {"key": "migrated", "label": "Migrated Data", "default": True, "type": "boolean"},
     {"key": "created_at", "label": "Created At", "default": False, "type": "date"},
     {"key": "updated_at", "label": "Updated At", "default": False, "type": "date"}
 ]
@@ -248,9 +249,13 @@ def change_status(task_id):
 @bp.route("/<int:task_id>")
 @login_required
 def task_detail(task_id):
+    # Local import to prevent circular dependencies
+    from app.routes.matters import GRID_COLUMNS as MATTER_GRID_COLUMNS
+
     task = Task.query.get(task_id) or abort(404)
     # This ensures the Assignee dropdown populates!
     users = User.query.order_by(User.name).all()
+    
     return render_template(
         "tasks/detail.html",
         task=task,
@@ -258,6 +263,7 @@ def task_detail(task_id):
         priorities=TASK_PRIORITIES,
         task_statuses=get_task_statuses(),
         participant_roles=get_participant_roles(),
+        matter_grid_columns=MATTER_GRID_COLUMNS, # <--- Added
     )
 
 @bp.route("/<int:task_id>/comments", methods=["POST"])

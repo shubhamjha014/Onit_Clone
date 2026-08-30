@@ -1,21 +1,98 @@
 {% extends "base.html" %}
 {% block title %}{{ contact.name }} &middot; {{ app_name }}{% endblock %}
+
 {% block content %}
 <div class="page-head">
     <h1>{{ contact.name }}</h1>
-    <div>
-        <a class="btn btn-light" href="{{ url_for('contacts.list_contacts') }}">Back</a>
-        <a class="btn btn-primary" href="{{ url_for('contacts.edit_contact', contact_id=contact.id) }}">Edit Contact</a>
-    </div>
+    <a class="btn btn-light" href="{{ url_for('contacts.list_contacts') }}">Back to Contacts</a>
 </div>
-<section class="panel">
-    <div class="detail-rows">
+
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
+<section class="panel summary-panel">
+    <div class="summary-grid">
+        <div><span>Contact Name</span><strong>{{ contact.name }}</strong></div>
         <div><span>Email</span><strong>{{ contact.email }}</strong></div>
-        <div><span>Phone</span><strong>{{ contact.phone or '-' }}</strong></div>
         <div><span>Organization</span><strong>{{ contact.organization or '-' }}</strong></div>
         <div><span>Role</span><strong>{{ contact.role or '-' }}</strong></div>
         <div><span>Contact Type</span><strong>{{ contact.contact_type }}</strong></div>
-        <div><span>Created</span><strong>{{ contact.created_at.strftime('%b %d, %Y') }}</strong></div>
     </div>
 </section>
+
+<div class="detail-layout">
+    <div class="detail-main">
+        <section class="panel">
+            
+            <div class="tab-navigation">
+                <ul class="nav-tabs" role="tablist">
+                    <li role="presentation"><a href="#details" role="tab" class="active">Details</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="details">
+                    <form method="POST" action="{{ url_for('contacts.update_contact', contact_id=contact.id) }}" id="detailsForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="detail-rows">
+                            
+                            <div class="detail-label">Contact Name <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ contact.name }}</strong>
+                                <input class="edit-mode" type="text" name="name" value="{{ contact.name }}" style="display:none;" required>
+                            </div>
+
+                            <div class="detail-label">Email <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ contact.email }}</strong>
+                                <input class="edit-mode" type="email" name="email" value="{{ contact.email }}" style="display:none;" required>
+                            </div>
+
+                            <div class="detail-label">Phone</div>
+                            <div>
+                                <strong class="view-mode">{{ contact.phone or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="phone" value="{{ contact.phone or '' }}" style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Organization</div>
+                            <div>
+                                <strong class="view-mode">{{ contact.organization or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="organization" value="{{ contact.organization or '' }}" style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Role</div>
+                            <div>
+                                <strong class="view-mode">{{ contact.role or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="role" value="{{ contact.role or '' }}" style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Contact Type <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ contact.contact_type }}</strong>
+                                <select class="edit-mode" name="contact_type" style="display:none;" required>
+                                    {% for type in contact_types %}
+                                        <option value="{{ type }}" {% if contact.contact_type == type %}selected{% endif %}>{{ type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <!-- Bottom-right actions -->
+                        <div class="detail-actions">
+                            <button type="button" id="editBtn" onclick="enableEdit()">Edit</button>
+                            <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+                            <button type="submit" id="updateBtn" style="display:none;">Update</button>
+                        </div>
+                    </form>
+                </div> 
+            </div> 
+        </section>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="detail-side">
+        <!-- Kept empty for now, matches the modular format ready for Activity/Comments later -->
+    </aside>
+</div>
 {% endblock %}

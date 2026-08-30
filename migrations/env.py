@@ -34,15 +34,8 @@ def get_engine_url():
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 config.set_main_option('sqlalchemy.url', get_engine_url())
 target_db = current_app.extensions['migrate'].db
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
 
 
 def get_metadata():
@@ -51,43 +44,31 @@ def get_metadata():
     return target_db.metadata
 
 
+# 1. FIXED FUNCTION DEFINITION
+def include_object(object, name, type_, reflected, compare_to):
+    """Tell Alembic to ignore the list registry and all dynamic Pandas tables."""
+    if type_ == "table" and name:
+        if name == "list_registry" or name.startswith("list_"):
+            return False
+    return True
+
+
 def run_migrations_offline():
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
+    """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url, target_metadata=get_metadata(), literal_binds=True
+        url=url, 
+        target_metadata=get_metadata(), 
+        literal_binds=True,
+        include_object=include_object  # Added here for offline safety
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
-def include_name(name, type_, parent_names):
-    # Ignore any database table that starts with "list_"
-    if type_ == "table" and name is not None and name.startswith("list_"):
-        return False
-    return True
 
 def run_migrations_online():
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
-
-    # this callback is used to prevent an auto-migration from being generated
-    # when there are no changes to the schema
-    # reference: http://alembic.zzzcomputing.com/en/latest/cookbook.html
+    """Run migrations in 'online' mode."""
     def process_revision_directives(context, revision, directives):
         if getattr(config.cmd_opts, 'autogenerate', False):
             script = directives[0]
@@ -105,7 +86,7 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
-            include_name=include_name,
+            include_object=include_object,  # 2. FIXED CALL
             **conf_args
         )
 

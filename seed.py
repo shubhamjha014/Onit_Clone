@@ -1,166 +1,168 @@
-"""Populate the database with demo data for every application module."""
+import random
+import string
+from datetime import datetime, timezone
+from sqlalchemy.exc import IntegrityError
 
-from datetime import date, datetime, timedelta
-from random import choice, randint
-
+# Adjust this import based on your exact app factory structure (e.g., from app import create_app)
 from app import create_app
 from app.extensions import db
-from app.models import (
-    Activity,
-    Allocation,
-    Comment,
-    Contact,
-    Invoice,
-    Matter,
-    Participant,
-    Task,
-    User,
-)
-from app.models.contact import CONTACT_TYPES
-from app.models.invoice import INVOICE_STATUSES
-from app.models.matter import (
-    AREAS_OF_LAW,
-    CURRENCIES,
-    LEGAL_ENTITIES,
-    MARKETS,
-    MATTER_STATUSES,
-    MATTER_TYPES,
-    PAYMENT_METHODS,
-    REGIONS,
-)
-from app.models.task import TASK_PRIORITIES, TASK_STATUSES
 
-DEMO_USERS = [
-    ("Demo User", "demo@example.com"),
-    ("Sarah Cole", "sarah.cole@example.com"),
-    ("Martin Allison", "martin.allison@example.com"),
-    ("Priya Nair", "priya.nair@example.com"),
-]
-
-VENDORS = ["Harper & Vance LLP", "Bracken Legal", "Ridgeway Counsel", "Kestrel Advisory"]
+# Import your models
+from app.models.user import User
+from app.models.vendor import Vendor
+from app.models.matter import Matter
+from app.models.task import Task
+from app.models.vatm import VendorAssignmentToMatter
+from app.models.invoice import Invoice
+from app.models.activity import Activity, Participant
 
 
-def reset_database():
-    db.drop_all()
-    db.create_all()
+def generate_unique_id(prefix, length=6):
+    """Generates a random string to prevent unique constraint crashes."""
+    chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+    return f"{prefix}-{chars}"
 
 
-def seed():
-    users = []
-    for name, email in DEMO_USERS:
-        user = User(name=name, email=email)
-        user.set_password("demo1234")
-        db.session.add(user)
-        users.append(user)
-    db.session.flush()
-
-    demo_user = users[0]
-
-    matters = []
-    for index in range(1, 13):
-        matter = Matter(
-            matter_number=f"{datetime.utcnow().year}-{index:05d}",
-            matter_name=f"{choice(['Vendor', 'Franchise', 'Trademark', 'Lease', 'Employment'])} Matter {index}",
-            matter_manager_id=(demo_user if index % 2 else choice(users)).id,
-            opened_on=date.today() - timedelta(days=randint(1, 240)),
-            brief_description="Demo matter created by the seed script.",
-            market=choice(MARKETS),
-            area_of_law=choice(AREAS_OF_LAW),
-            region=choice(REGIONS),
-            matter_type=choice(MATTER_TYPES),
-            legal_entity=choice(LEGAL_ENTITIES),
-            currency=choice(CURRENCIES),
-            payment_method=choice(PAYMENT_METHODS),
-            total_budget=randint(10, 200) * 1000,
-            status=choice(MATTER_STATUSES),
-        )
-        db.session.add(matter)
-        matters.append(matter)
-    db.session.flush()
-
-    for matter in matters:
-        db.session.add_all(
-            [
-                Participant(
-                    matter_id=matter.id,
-                    name=demo_user.name,
-                    email=demo_user.email,
-                    role="Requester",
-                ),
-                Participant(
-                    matter_id=matter.id,
-                    name="Sarah Cole",
-                    email="sarah.cole@example.com",
-                    role="Matter Manager",
-                ),
-                Allocation(
-                    matter_id=matter.id,
-                    department="Legal Operations",
-                    percentage=100,
-                    amount=matter.total_budget,
-                    notes="Full allocation to legal operations.",
-                ),
-                Comment(
-                    matter_id=matter.id,
-                    author_id=demo_user.id,
-                    comment_text="Kick-off completed with the business stakeholders.",
-                ),
-                Activity(
-                    matter_id=matter.id,
-                    user_id=demo_user.id,
-                    activity_type="Matter Created",
-                    description=f"Matter {matter.matter_number} created",
-                ),
-            ]
-        )
-
-    for index, matter in enumerate(matters[:8], start=1):
-        invoice = Invoice(
-            invoice_number=f"INV-{1000 + index}",
-            matter_id=matter.id,
-            vendor_name=choice(VENDORS),
-            invoice_date=date.today() - timedelta(days=randint(1, 60)),
-            amount=randint(1, 40) * 500,
-            currency=matter.currency,
-            description="Professional services rendered.",
-            status=choice(INVOICE_STATUSES),
-            submitted_date=date.today() - timedelta(days=randint(1, 30)),
-        )
-        db.session.add(invoice)
-        if invoice.status != "Rejected":
-            matter.invoice_total = (matter.invoice_total or 0) + invoice.amount
-
-    for index in range(1, 11):
-        db.session.add(
-            Contact(
-                name=f"Contact Person {index}",
-                email=f"contact{index}@example.com",
-                phone=f"+1 555 010{index:02d}",
-                organization=choice(VENDORS),
-                role=choice(["Partner", "Associate", "Billing Manager", "Analyst"]),
-                contact_type=choice(CONTACT_TYPES),
-            )
-        )
-
-    for index in range(1, 13):
-        db.session.add(
-            Task(
-                title=f"Review deliverable {index}",
-                matter_id=choice(matters).id,
-                assignee_id=(demo_user if index % 2 else choice(users)).id,
-                description="Demo task created by the seed script.",
-                due_date=date.today() + timedelta(days=randint(-5, 30)),
-                priority=choice(TASK_PRIORITIES),
-                status=choice(TASK_STATUSES),
-            )
-        )
-
-    db.session.commit()
-
-
-if __name__ == "__main__":
+def run_seeder():
     app = create_app()
     with app.app_context():
-        reset_database()
-        seed()
-        print("Seed data created. Sign in with demo@example.com / demo1234")
+        print("Starting Data Integration...")
+
+        try:
+            # ==========================================
+            # PHASE 1: The Independents (Users & Vendors)
+            # ==========================================
+            print("1. Creating Matter Managers and Vendors...")
+            
+            managers = []
+            for i in range(1, 4):
+                user = User(
+                    name=f"AI Test Manager {i}",
+                    email=f"ai_manager_{i}_{random.randint(1000,9999)}@example.com",
+                    migrated=True
+                )
+                user.set_password("Password123!")
+                db.session.add(user)
+                managers.append(user)
+            
+            db.session.flush()
+
+            # Create an Independent Vendor
+            vendor = Vendor(
+                name=f"Global AI Legal Partners {random.randint(100, 999)}",
+                vendor_type="Law Firm",
+                billing_contact_1_name="Jane Doe",
+                billing_contact_1_email="jane.billing@globalailegal.com",
+                currency_code="United States Dollar",
+                status="Active",
+                migrated=True
+            )
+            db.session.add(vendor)
+            db.session.flush()
+
+            # ==========================================
+            # PHASE 2: The Core Object (Matters)
+            # ==========================================
+            print("2. Generating 5 Matters with Tasks, Participants, VATMs, and Invoices...")
+            
+            for i in range(1, 6):
+                assigned_manager = random.choice(managers)
+                
+                matter = Matter(
+                    matter_number=generate_unique_id("MAT"),
+                    matter_name=f"AI Integrated Dispute Resolution {i}",
+                    matter_manager_id=assigned_manager.id,
+                    opened_on=datetime.now(timezone.utc).date(),  # FIXED DATETIME
+                    brief_description="Dummy matter created for AI chat bot context analysis.",
+                    market="Corporate",
+                    area_of_law="Litigation",
+                    matter_type="Business disputes",
+                    legal_entity="101 - Northwind Holdings",
+                    currency="United States Dollar",
+                    status="In Progress",
+                    migrated=True
+                )
+                db.session.add(matter)
+                db.session.flush()
+
+                # ==========================================
+                # PHASE 3: Level 1 Dependencies (Tasks & Participants)
+                # ==========================================
+                db.session.add(Participant(
+                    matter_id=matter.id,
+                    name=assigned_manager.name,
+                    email=assigned_manager.email,
+                    role="Matter Manager"
+                ))
+                db.session.add(Participant(
+                    matter_id=matter.id,
+                    name="AI Bot Requester",
+                    email="requester@example.com",
+                    role="Requester"
+                ))
+                
+                for t in range(1, 4):
+                    task = Task(
+                        title=f"Initial Review & Briefing Phase {t}",
+                        matter_id=matter.id,
+                        assignee_id=assigned_manager.id,
+                        description="Analyze the attached documentation for the chatbot validation.",
+                        priority=random.choice(["Medium", "High", "Critical"]),
+                        status=random.choice(["Open", "In Progress"]),
+                        migrated=True
+                    )
+                    db.session.add(task)
+
+                # ==========================================
+                # PHASE 4: Level 2 Dependency (Vendor Assignment)
+                # ==========================================
+                vatm = VendorAssignmentToMatter(
+                    vatm_name=f"Legal Counsel Assignment - {vendor.name}",
+                    matter_id=matter.id,
+                    vendor_id=vendor.id,
+                    funding_type="Syndicate Funding Type",
+                    vendor_role="Primary Counsel",
+                    default_vendor_gl_account_number="GL-77492-01",
+                    fee_arrangement_value="Hourly Rate",
+                    syndicate_fixed_fee_amount=15000.00,
+                    migrated=True
+                )
+                db.session.add(vatm)
+                db.session.flush()
+
+                # ==========================================
+                # PHASE 5: Level 3 Dependency (Invoices)
+                # ==========================================
+                invoice = Invoice(
+                    invoice_number=generate_unique_id("INV", 8),
+                    matter_id=matter.id,
+                    vendor_name=vendor.name, 
+                    amount=random.uniform(5000.00, 25000.00),
+                    currency="United States Dollar",
+                    description="Professional services rendered for document discovery.",
+                    status="Pending Approval",
+                    migrated=True
+                )
+                db.session.add(invoice)
+
+                # ==========================================
+                # FIXED: Added activity_type to Activity Model
+                # ==========================================
+                db.session.add(Activity(
+                    matter_id=matter.id,
+                    activity_type="Data Integration", 
+                    description="Matter populated via AI Data Integration script."
+                ))
+
+            # ==========================================
+            # PHASE 6: Commit Transaction
+            # ==========================================
+            db.session.commit()
+            print("✅ Success! Dummy data has been integrated seamlessly.")
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Error during seeding. Transaction rolled back.\nDetails: {str(e)}")
+
+if __name__ == "__main__":
+    run_seeder()

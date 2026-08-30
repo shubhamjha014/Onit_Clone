@@ -26,7 +26,8 @@ from app.models.matter import (
 from app.models.task import TASK_PRIORITIES
 from app.models.app_setting import AppSetting
 
-from app.routes.tasks import get_task_statuses
+from app.routes.vatms import get_vatm_choices, GRID_COLUMNS as VATM_GRID_COLUMNS
+from app.routes.tasks import get_task_statuses, GRID_COLUMNS as TASK_GRID_COLUMNS
 from app.services.auth_service import current_user, login_required
 from app.services.matter_service import generate_matter_number, log_activity
 
@@ -50,8 +51,20 @@ GRID_COLUMNS = [
     {"key": "payment_method", "label": "Payment Method", "default": False, "type": "text"},
     {"key": "invoice_total", "label": "Invoice Total", "default": False, "type": "currency"},
     {"key": "total_budget", "label": "Total Budget", "default": False, "type": "currency"},
+    {"key": "migrated", "label": "Migrated Data", "default": True, "type": "boolean"},
     {"key": "created_at", "label": "Created At", "default": False, "type": "date"},
     {"key": "updated_at", "label": "Updated At", "default": False, "type": "date"}
+]
+
+LINES_OF_BUSINESS = [
+    "CB - Global Receivables & Trade Finance",
+    "IB - Investment Banking",
+    "WM - Wealth Management",
+    "AM - Asset Management",
+    "CB - Commercial Real Estate",
+    "RB - Retail Banking",
+    "CIB - Corporate & Institutional Banking",
+    "Treasury & Markets"
 ]
 
 def get_participant_roles():
@@ -110,6 +123,7 @@ def _form_choices():
         "currencies": CURRENCIES,
         "statuses": get_matter_statuses(),
         "payment_methods": PAYMENT_METHODS,
+        "lines_of_business": LINES_OF_BUSINESS,
     }
 
 
@@ -153,6 +167,7 @@ def list_matters():
         area=area,
         statuses=get_matter_statuses(),
         areas_of_law=get_areas_of_law(),
+        lines_of_business=LINES_OF_BUSINESS,
         grid_columns=GRID_COLUMNS,
     )
 
@@ -196,13 +211,16 @@ def new_matter():
         legal_entity=form["legal_entity"],
         currency=form["currency"],
         payment_method=form.get("payment_method") or None,
+        primary_line_of_business=form.get("primary_line_of_business"),
         total_budget=form.get("total_budget") or 0,
         status="Pending Allocation",
     )
 
     try:
         db.session.add(matter)
-        db.session.flush()
+        db.session.flush() # This saves the matter and generates the matter.id
+        
+        # 1. Automatically add the person creating the form as the 'Requester'
         db.session.add(
             Participant(
                 matter_id=matter.id,
@@ -211,12 +229,28 @@ def new_matter():
                 role="Requester",
             )
         )
+
+        # 2. NEW LOGIC: Fetch the selected manager and add them as 'Matter Manager'
+        manager = User.query.get(int(form["matter_manager_id"]))
+        
+        # Adds the manager regardless of who is currently logged in
+        if manager:
+            db.session.add(
+                Participant(
+                    matter_id=matter.id,
+                    name=manager.name,
+                    email=manager.email,
+                    role="Matter Manager",
+                )
+            )
+
         log_activity(
             "Matter Created",
             f"Matter {matter.matter_number} created",
             matter=matter,
             user=current_user(),
         )
+        
         db.session.commit()
     except SQLAlchemyError:
         db.session.rollback()
@@ -229,20 +263,32 @@ def new_matter():
 @bp.route("/<int:matter_id>")
 @login_required
 def matter_detail(matter_id):
+    from app.routes.invoices import GRID_COLUMNS as INVOICE_GRID_COLUMNS
+    from app.routes.invoices import _get_invoice_choices
+
     matter = Matter.query.get(matter_id) or abort(404)
     # This ensures the Assignee dropdown populates!
     users = User.query.order_by(User.name).all()
+    vatm_options = get_vatm_choices()
+    is_editable = matter.status != "Closed"
     return render_template(
         "matters/detail.html",
         matter=matter,
+        is_editable=is_editable,
         statuses=get_matter_statuses(),
         participant_roles=get_participant_roles(),
         areas_of_law=get_areas_of_law(),
+        lines_of_business=LINES_OF_BUSINESS,
         activities=sorted(matter.activities, key=lambda a: a.created_at, reverse=True),
         comments=sorted(matter.comments, key=lambda c: c.created_at, reverse=True),
         users=users,
         priorities=TASK_PRIORITIES,
         task_statuses=get_task_statuses(),
+        vatm_grid_columns=VATM_GRID_COLUMNS,
+        task_grid_columns=TASK_GRID_COLUMNS,
+        invoice_grid_columns=INVOICE_GRID_COLUMNS, # <-- Added
+        invoice_choices=_get_invoice_choices(),
+        **vatm_options
     )
 
 
@@ -383,10 +429,20 @@ def update(matter_id):
     region = request.form.get("region", "").strip()
     currency = request.form.get("currency", "").strip()
 
+    # <-- ADD THESE 3 LINES to capture the new frontend fields -->
+    brief_description = request.form.get("brief_description", "").strip()
+    payment_method = request.form.get("payment_method", "").strip()
+    primary_line_of_business = request.form.get("primary_line_of_business", "").strip()
+
     # Update the matter
     matter.market = market
     matter.region = region or None
     matter.currency = currency
+
+    # <-- ADD THESE 3 LINES to save them to the database -->
+    matter.brief_description = brief_description or None
+    matter.payment_method = payment_method or None
+    matter.primary_line_of_business = primary_line_of_business
 
     try:
         log_activity(

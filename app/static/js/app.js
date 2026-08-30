@@ -2,12 +2,23 @@
 document.addEventListener("click", (event) => {
     const opener = event.target.closest("[data-modal-target]");
     if (opener) {
-        document.getElementById(opener.dataset.modalTarget)?.classList.add("open");
+        const targetId = opener.dataset.modalTarget;
+        // GENERIC FIX: Look inside current tab/container FIRST
+        const parentContext = opener.closest('.tab-pane, .tab-embedded-grid, section');
+        let targetModal = parentContext ? (parentContext.querySelector(`#${targetId}`) || parentContext.querySelector(`.${targetId}`)) : null;
+        
+        // Fallback to global search if it's a standard page
+        if (!targetModal) targetModal = document.getElementById(targetId);
+        
+        if (targetModal) targetModal.classList.add("open");
         return;
     }
-    if (event.target.closest("[data-modal-close]") || event.target.classList.contains("modal")) {
-        const modalToClose = event.target.closest(".modal") || event.target;
-        modalToClose.classList.remove("open");
+
+    // ADDED FIX: Modal Close Logic
+    const closer = event.target.closest("[data-modal-close]");
+    if (closer) {
+        const modal = closer.closest(".modal");
+        if (modal) modal.classList.remove("open");
         return;
     }
     
@@ -55,13 +66,25 @@ function updateBulkToolbar(table) {
         selectAll.indeterminate = selected > 0 && selected < total;
     }
 
-    const toolbarSelector = table.dataset.bulkToolbar;
-    const toolbar = toolbarSelector ? document.querySelector(toolbarSelector) : table.closest('.panel')?.previousElementSibling;
+    // 100% BULLETPROOF HYBRID APPROACH:
+    // Step 1: If we are in a tab/embedded grid, lock the search to that specific container.
+    // If we are on a main page, fallback to the entire document.
+    const searchContext = table.closest('.tab-pane, .tab-embedded-grid') || document;
+    
+    // Step 2: Now safely search for the toolbar within that locked context.
+    const toolbarSelector = table.dataset.bulkToolbar || ".list-toolbar";
+    const toolbar = searchContext.querySelector(toolbarSelector);
     
     if (toolbar) {
         const actionButton = toolbar.querySelector(".bulk-action-btn");
-        if (actionButton) actionButton.disabled = selected === 0; 
-        if (selected === 0) toolbar.querySelector(".dropdown-menu")?.classList.add("hidden");
+        if (actionButton) {
+            actionButton.disabled = selected === 0; 
+        }
+        
+        if (selected === 0) {
+            const dropMenu = toolbar.querySelector(".dropdown-menu");
+            if (dropMenu) dropMenu.classList.add("hidden");
+        }
     }
 }
 
@@ -75,31 +98,41 @@ document.addEventListener("change", (event) => {
     updateBulkToolbar(table);
 });
 
-
-// 3. AJAX Refresh Logic (Now perfectly saves Column Layout & Filters)
+// 3. AJAX Refresh Logic (Context-Aware & Legacy-Safe)
 document.addEventListener("click", (event) => {
-    const refreshBtn = event.target.closest("#ajaxRefreshBtn");
+    // Looks for EITHER the old ID or the new Class
+    const refreshBtn = event.target.closest("#ajaxRefreshBtn, .ajaxRefreshBtn");
     if (!refreshBtn) return;
     
     const icon = refreshBtn.querySelector(".refresh-icon");
     if (icon) icon.classList.add("spin-icon");
     
-    const container = document.getElementById("table-container");
+    const parentContext = refreshBtn.closest('.tab-pane, .tab-embedded-grid') || document.body;
+    
+    // Looks for EITHER the old ID or the new Class
+    const container = parentContext.querySelector("#table-container, .table-container");
+    
     if (container) container.style.opacity = "0.5";
 
     fetch(window.location.href)
         .then(res => res.text())
         .then(html => {
             const doc = new DOMParser().parseFromString(html, "text/html");
-            const newTable = doc.getElementById("table-container");
+            let newTable = null;
+            
+            const tabPane = refreshBtn.closest('.tab-pane');
+            if (tabPane && tabPane.id) {
+                const fetchedTabPane = doc.getElementById(tabPane.id);
+                if (fetchedTabPane) newTable = fetchedTabPane.querySelector("#table-container, .table-container");
+            } else {
+                newTable = doc.querySelector("#table-container, .table-container");
+            }
+
             if (newTable && container) {
                 container.innerHTML = newTable.innerHTML;
-                
-                // Re-apply Custom Dragged Columns instantly
                 if (window.currentGridLayout && typeof applyGridLayout === 'function') {
-                    applyGridLayout(window.currentGridLayout);
+                    applyGridLayout(window.currentGridLayout, container.querySelector('.table'));
                 }
-                // Re-apply active Search Filters instantly
                 if (typeof renderTableFilters === 'function') renderTableFilters();
             }
         })
@@ -109,7 +142,7 @@ document.addEventListener("click", (event) => {
         });
 });
 
-// 4. AJAX Bulk Action Trigger (Matters Page)
+// 4. AJAX Bulk Action Trigger (Context-Aware & Legacy-Safe)
 let pendingBulkAction = null;
 document.addEventListener("click", (event) => {
     const actionLink = event.target.closest("[data-bulk-action]");
@@ -117,24 +150,32 @@ document.addEventListener("click", (event) => {
     event.preventDefault();
     
     const action = actionLink.dataset.bulkAction;
-    const container = document.getElementById("table-container");
+    const parentContext = actionLink.closest('.tab-pane, .tab-embedded-grid') || document.body;
+    
+    // Looks for EITHER the old ID or the new Class
+    const container = parentContext.querySelector("#table-container, .table-container");
+    
+    if (!container) return;
+    
     const selectedIds = Array.from(container.querySelectorAll(".bulk-select-row:checked")).map(cb => cb.value);
     
     if (selectedIds.length === 0) return alert("Please select at least one record to perform this action.");
     
-    pendingBulkAction = { action, selectedIds };
-    document.getElementById("bulk-confirm-modal").classList.add("open");
+    pendingBulkAction = { action, selectedIds, container };
+    
+    const confirmModal = parentContext.querySelector("#bulk-confirm-modal, .bulk-confirm-modal");
+    if (confirmModal) confirmModal.classList.add("open");
     actionLink.closest(".dropdown-menu")?.classList.add("hidden"); 
 });
 
-// 5. AJAX Confirm Execution inside the Modal (Matters Page)
+// 5. AJAX Confirm Execution inside the Modal (Context-Aware & Legacy-Safe)
 document.addEventListener("click", (event) => {
-    if (event.target.id !== "confirm-bulk-btn") return;
+    const confirmBtn = event.target.closest("#confirm-bulk-btn, .confirm-bulk-btn");
+    if (!confirmBtn) return;
     if (!pendingBulkAction || pendingBulkAction.action !== "delete") return;
     
     const csrfToken = document.getElementById("csrf-token")?.value;
-    const deleteUrl = document.getElementById("table-container")?.dataset.deleteUrl;
-    const confirmBtn = event.target;
+    const deleteUrl = pendingBulkAction.container.dataset.deleteUrl;
     
     confirmBtn.disabled = true; 
     
@@ -153,8 +194,9 @@ document.addEventListener("click", (event) => {
     })
     .then(data => {
         if (data.success) {
-            document.getElementById("bulk-confirm-modal").classList.remove("open");
-            document.getElementById("ajaxRefreshBtn")?.click(); 
+            event.target.closest(".modal").classList.remove("open");
+            const refreshBtn = pendingBulkAction.container.closest('.tab-pane, .tab-embedded-grid, body').querySelector("#ajaxRefreshBtn, .ajaxRefreshBtn");
+            if (refreshBtn) refreshBtn.click();
         } else alert("Error: " + data.error);
     })
     .catch(err => alert(err.message))
@@ -163,7 +205,6 @@ document.addEventListener("click", (event) => {
         pendingBulkAction = null;
     });
 });
-
 // 6. LEGACY Form-based Bulk Delete (Users Page)
 document.addEventListener("click", (event) => {
     const deleteItem = event.target.closest("[data-bulk-delete-url]");
@@ -370,11 +411,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// --- 11. Dynamic "Select Fields" Modal & Grid Reordering ---
-window.currentGridLayout = null; // Saves column layout state globally!
+// --- 11. Generic Dynamic "Select Fields" Modal & Grid Reordering ---
+window.currentGridLayout = null; 
 
-window.applyGridLayout = function(selectedFields) {
-    const table = document.querySelector(".table");
+// Accepts a specific table element so it doesn't accidentally affect the wrong grid
+window.applyGridLayout = function(selectedFields, targetTableElement) {
+    const table = targetTableElement || document.querySelector(".table");
     if (!table) return;
 
     const headers = Array.from(table.rows[0].cells);
@@ -407,137 +449,152 @@ window.applyGridLayout = function(selectedFields) {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    const modal = document.getElementById("select-cols-modal");
-    if (!modal) return;
+    // GENERIC FIX: Loop through ALL select-fields modals on the page
+    document.querySelectorAll(".select-cols-modal-inner").forEach(modalInner => {
+        const modal = modalInner.closest('.modal');
+        if (!modal) return;
 
-    const allFieldsList = document.getElementById("all-fields-list");
-    const showOnGridList = document.getElementById("show-on-grid-list");
-    const selectAllCheckbox = document.getElementById("select-all-fields-cb");
+        // Contextual lookups within this specific modal
+        const allFieldsList = modalInner.querySelector("#all-fields-list, .all-fields-list");
+        const showOnGridList = modalInner.querySelector("#show-on-grid-list, .show-on-grid-list");
+        const selectAllCheckbox = modalInner.querySelector("#select-all-fields-cb, .select-all-fields-cb");
 
-    modal.querySelectorAll(".field-search-input").forEach(searchInput => {
-        searchInput.addEventListener("input", (e) => {
-            const term = e.target.value.toLowerCase();
-            const container = e.target.closest(".select-cols-left, .select-cols-right");
-            const items = container.querySelectorAll(".field-item, .selected-field-item");
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(term) ? "" : "none";
+        modalInner.querySelectorAll(".field-search-input").forEach(searchInput => {
+            searchInput.addEventListener("input", (e) => {
+                const term = e.target.value.toLowerCase();
+                const container = e.target.closest(".select-cols-left, .select-cols-right");
+                container.querySelectorAll(".field-item, .selected-field-item").forEach(item => {
+                    item.style.display = item.textContent.toLowerCase().includes(term) ? "" : "none";
+                });
             });
         });
-    });
 
-    allFieldsList.addEventListener("change", (e) => {
-        if (e.target.type === "checkbox") {
-            const fieldName = e.target.closest(".field-item").dataset.field;
-            if (e.target.checked) addToRightList(fieldName);
-            else removeFromRightList(fieldName);
-            updateSelectAllState();
-        }
-    });
-
-    showOnGridList.addEventListener("click", (e) => {
-        if (e.target.classList.contains("remove-btn")) {
-            const fieldName = e.target.closest(".selected-field-item").dataset.field;
-            removeFromRightList(fieldName);
-            const leftCheckbox = allFieldsList.querySelector(`.field-item[data-field="${fieldName}"] input`);
-            if (leftCheckbox) leftCheckbox.checked = false;
-            updateSelectAllState();
-        }
-    });
-
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener("change", (e) => {
-            const isChecked = e.target.checked;
-            allFieldsList.querySelectorAll(".field-item input[type='checkbox']").forEach(cb => {
-                if (cb.checked !== isChecked) {
-                    cb.checked = isChecked;
-                    const fieldName = cb.closest(".field-item").dataset.field;
-                    if (isChecked) addToRightList(fieldName);
+        if (allFieldsList) {
+            allFieldsList.addEventListener("change", (e) => {
+                if (e.target.type === "checkbox") {
+                    const fieldName = e.target.closest(".field-item").dataset.field;
+                    if (e.target.checked) addToRightList(fieldName);
                     else removeFromRightList(fieldName);
+                    updateSelectAllState();
                 }
             });
-        });
-    }
+        }
 
-    function addToRightList(fieldName) {
-        if (showOnGridList.querySelector(`.selected-field-item[data-field="${fieldName}"]`)) return;
-        const div = document.createElement("div");
-        div.className = "selected-field-item";
-        div.dataset.field = fieldName;
-        div.draggable = true;
-        div.innerHTML = `<div class="selected-field-item-left"><span class="drag-handle">⋮⋮</span> ${fieldName}</div><span class="remove-btn">&times;</span>`;
-        showOnGridList.appendChild(div);
-        setupDragAndDrop(div);
-    }
+        if (showOnGridList) {
+            showOnGridList.addEventListener("click", (e) => {
+                if (e.target.classList.contains("remove-btn")) {
+                    const fieldName = e.target.closest(".selected-field-item").dataset.field;
+                    removeFromRightList(fieldName);
+                    const leftCb = allFieldsList.querySelector(`.field-item[data-field="${fieldName}"] input`);
+                    if (leftCb) leftCb.checked = false;
+                    updateSelectAllState();
+                }
+            });
+        }
 
-    function removeFromRightList(fieldName) {
-        const item = showOnGridList.querySelector(`.selected-field-item[data-field="${fieldName}"]`);
-        if (item) item.remove();
-    }
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener("change", (e) => {
+                const isChecked = e.target.checked;
+                allFieldsList.querySelectorAll(".field-item input[type='checkbox']").forEach(cb => {
+                    if (cb.checked !== isChecked) {
+                        cb.checked = isChecked;
+                        const fieldName = cb.closest(".field-item").dataset.field;
+                        if (isChecked) addToRightList(fieldName);
+                        else removeFromRightList(fieldName);
+                    }
+                });
+            });
+        }
 
-    function updateSelectAllState() {
-        const total = allFieldsList.querySelectorAll(".field-item input[type='checkbox']").length;
-        const checked = allFieldsList.querySelectorAll(".field-item input[type='checkbox']:checked").length;
-        if (selectAllCheckbox) selectAllCheckbox.checked = (total > 0 && total === checked);
-    }
+        function addToRightList(fieldName) {
+            if (showOnGridList.querySelector(`.selected-field-item[data-field="${fieldName}"]`)) return;
+            const div = document.createElement("div");
+            div.className = "selected-field-item";
+            div.dataset.field = fieldName;
+            div.draggable = true;
+            div.innerHTML = `<div class="selected-field-item-left"><span class="drag-handle">⋮⋮</span> ${fieldName}</div><span class="remove-btn">&times;</span>`;
+            showOnGridList.appendChild(div);
+            setupDragAndDrop(div);
+        }
 
-    let draggedItem = null;
-    function setupDragAndDrop(el) {
-        el.addEventListener("dragstart", function(e) {
-            draggedItem = this;
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("text/plain", this.dataset.field);
-            setTimeout(() => this.style.opacity = "0.5", 0);
-        });
-        el.addEventListener("dragend", function() {
-            setTimeout(() => { this.style.opacity = "1"; draggedItem = null; }, 0);
-        });
-        el.addEventListener("dragover", function(e) {
-            e.preventDefault();
-            this.style.borderTop = "2px solid #2f6feb";
-        });
-        el.addEventListener("dragleave", function() { this.style.borderTop = ""; });
-        el.addEventListener("drop", function(e) {
-            e.preventDefault();
-            this.style.borderTop = "";
-            if (draggedItem !== this && draggedItem && draggedItem.classList.contains("selected-field-item")) {
-                this.parentNode.insertBefore(draggedItem, this);
-            }
-        });
-    }
-    showOnGridList.querySelectorAll(".selected-field-item").forEach(setupDragAndDrop);
+        function removeFromRightList(fieldName) {
+            const item = showOnGridList.querySelector(`.selected-field-item[data-field="${fieldName}"]`);
+            if (item) item.remove();
+        }
 
-    allFieldsList.querySelectorAll(".field-item").forEach(item => {
-        item.draggable = true;
-        item.addEventListener("dragstart", function(e) {
-            e.dataTransfer.effectAllowed = "copy";
-            e.dataTransfer.setData("text/plain", this.dataset.field);
-        });
-    });
-    
-    showOnGridList.addEventListener("dragover", e => e.preventDefault());
-    showOnGridList.addEventListener("drop", function(e) {
-        e.preventDefault();
-        const fieldName = e.dataTransfer.getData("text/plain");
-        if (fieldName) {
-            const leftCb = allFieldsList.querySelector(`.field-item[data-field="${fieldName}"] input`);
-            if (leftCb && !leftCb.checked) {
-                leftCb.checked = true;
-                addToRightList(fieldName);
-                updateSelectAllState();
-            }
+        function updateSelectAllState() {
+            const total = allFieldsList.querySelectorAll(".field-item input[type='checkbox']").length;
+            const checked = allFieldsList.querySelectorAll(".field-item input[type='checkbox']:checked").length;
+            if (selectAllCheckbox) selectAllCheckbox.checked = (total > 0 && total === checked);
+        }
+
+        let draggedItem = null;
+        function setupDragAndDrop(el) {
+            el.addEventListener("dragstart", function(e) {
+                draggedItem = this;
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", this.dataset.field);
+                setTimeout(() => this.style.opacity = "0.5", 0);
+            });
+            el.addEventListener("dragend", function() {
+                setTimeout(() => { this.style.opacity = "1"; draggedItem = null; }, 0);
+            });
+            el.addEventListener("dragover", function(e) {
+                e.preventDefault();
+                this.style.borderTop = "2px solid #2f6feb";
+            });
+            el.addEventListener("dragleave", function() { this.style.borderTop = ""; });
+            el.addEventListener("drop", function(e) {
+                e.preventDefault();
+                this.style.borderTop = "";
+                if (draggedItem !== this && draggedItem.classList.contains("selected-field-item")) {
+                    this.parentNode.insertBefore(draggedItem, this);
+                }
+            });
+        }
+        
+        if (showOnGridList) {
+            showOnGridList.querySelectorAll(".selected-field-item").forEach(setupDragAndDrop);
+            showOnGridList.addEventListener("dragover", e => e.preventDefault());
+            showOnGridList.addEventListener("drop", function(e) {
+                e.preventDefault();
+                const fieldName = e.dataTransfer.getData("text/plain");
+                if (fieldName) {
+                    const leftCb = allFieldsList.querySelector(`.field-item[data-field="${fieldName}"] input`);
+                    if (leftCb && !leftCb.checked) {
+                        leftCb.checked = true;
+                        addToRightList(fieldName);
+                        updateSelectAllState();
+                    }
+                }
+            });
+        }
+
+        if (allFieldsList) {
+            allFieldsList.querySelectorAll(".field-item").forEach(item => {
+                item.draggable = true;
+                item.addEventListener("dragstart", function(e) {
+                    e.dataTransfer.effectAllowed = "copy";
+                    e.dataTransfer.setData("text/plain", this.dataset.field);
+                });
+            });
+        }
+
+        const applyBtn = modalInner.querySelector(".btn-apply");
+        if (applyBtn) {
+            applyBtn.addEventListener("click", () => {
+                const selectedFields = Array.from(showOnGridList.querySelectorAll(".selected-field-item")).map(i => i.dataset.field);
+                window.currentGridLayout = selectedFields;
+                
+                // GENERIC FIX: Find the specific table associated with THIS modal
+                const contextWrapper = modal.closest('.tab-pane, .tab-embedded-grid, section, body');
+                const activeTable = contextWrapper.querySelector('.table');
+                
+                applyGridLayout(selectedFields, activeTable);
+                modal.classList.remove("open");
+            });
         }
     });
-
-    const applyBtn = modal.querySelector(".btn-apply");
-    if (applyBtn) {
-        applyBtn.addEventListener("click", () => {
-            const selectedFields = Array.from(showOnGridList.querySelectorAll(".selected-field-item")).map(i => i.dataset.field);
-            window.currentGridLayout = selectedFields; // Save it so the refresh button remembers!
-            applyGridLayout(selectedFields);
-            modal.classList.remove("open");
-        });
-    }
 });
 
 // --- 12. WYSIWYG Table Exporter (Matches selected columns, order, and active filters) ---

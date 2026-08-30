@@ -29,8 +29,11 @@ def create_app(config_object=Config):
     from app.routes.tasks import bp as tasks_bp
     from app.routes.settings import bp as settings_bp
     from app.routes.lists import bp as lists_bp
+    from app.routes.vendors import bp as vendor_bp
+    from app.routes.vatms import bp as vatms_bp
+    from app.routes.chats import bp as chats_bp
 
-    for blueprint in (auth_bp, home_bp, matters_bp, invoices_bp, contacts_bp, tasks_bp, settings_bp, lists_bp):
+    for blueprint in (auth_bp, home_bp, matters_bp, invoices_bp, contacts_bp, tasks_bp, settings_bp, lists_bp, vendor_bp, vatms_bp, chats_bp):
         app.register_blueprint(blueprint)
 
     @app.context_processor

@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}Assignment Detail &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>{{ assignment.vatm_name }}</h1>
+    <a class="btn btn-light" href="{{ url_for('vatms.list_assignments') }}">Back to Assignments</a>
+</div>
+
+<!-- Master CSRF Token for embedded grid actions -->
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
+<section class="panel summary-panel">
+    <div class="summary-grid">
+        <div><span>Assignment Name</span><strong>{{ assignment.vatm_name }}</strong></div>
+        <div><span>Matter</span><strong>{{ assignment.matter.matter_name }}</strong></div>
+        <div><span>Vendor</span><strong>{{ assignment.vendor.name }}</strong></div>
+        <div><span>Funding Type</span><strong>{{ assignment.funding_type }}</strong></div>
+        <div><span>Role</span><strong>{{ assignment.vendor_role }}</strong></div>
+        <div><span>Assigned On</span><strong>{{ assignment.created_at.strftime('%m/%d/%y') }}</strong></div>
+    </div>
+</section>
+
+<div class="detail-layout">
+    <div class="detail-main">
+        
+        <section class="panel">
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <ul class="nav-tabs" role="tablist">
+                    <li role="presentation">
+                        <a href="#details" role="tab" class="active">Details</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#matter-pane" role="tab">Matter (1)</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#vendor-pane" role="tab">Vendor (1)</a>
+                    </li>
+                    <li role="presentation"><a href="#invoices-pane" role="tab">Invoices ({{ vatm_invoices|length }})</a></li>
+                </ul>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                
+                <!-- Details Pane (Wrapped in its form) -->
+                <div role="tabpanel" class="tab-pane active" id="details">
+                    <form method="POST" action="{{ url_for('vatms.update_assignment', assignment_id=assignment.id) }}" id="detailsForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="detail-rows">
+                            <div class="detail-label">Matter <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ assignment.matter.matter_name }}</strong>
+                                <select class="edit-mode" name="matter_id" style="display:none;" required>
+                                    <option value="">Select a matter...</option>
+                                    {% for m in matters %}
+                                    <option value="{{ m.id }}" {% if assignment.matter_id == m.id %}selected{% endif %}>{{ m.matter_number }} &mdash; {{ m.matter_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Panel Law Firm (Vendor) <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ assignment.vendor.name }}</strong>
+                                <select class="edit-mode" name="vendor_id" style="display:none;" required>
+                                    <option value="">Select a vendor...</option>
+                                    {% for v in vendors %}
+                                    <option value="{{ v.id }}" {% if assignment.vendor_id == v.id %}selected{% endif %}>{{ v.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Division Law Firm Panel</div>
+                            <div>
+                                <strong class="view-mode">{{ assignment.division_law_firm_panel or '-' }}</strong>
+                                <input class="edit-mode" type="text" name="division_law_firm_panel" value="{{ assignment.division_law_firm_panel or '' }}" style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Custom International Panel?</div>
+                            <div>
+                                <strong class="view-mode">{{ 'Yes' if assignment.custom_international_panel else 'No' }}</strong>
+                                <input class="edit-mode" type="checkbox" name="custom_international_panel" {% if assignment.custom_international_panel %}checked{% endif %} style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Funding Type <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ assignment.funding_type }}</strong>
+                                <select class="edit-mode" name="funding_type" style="display:none;" required>
+                                    <option value="">Select type...</option>
+                                    {% for type in funding_types %}
+                                    <option value="{{ type }}" {% if assignment.funding_type == type %}selected{% endif %}>{{ type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Panel Law Firms Only?</div>
+                            <div>
+                                <strong class="view-mode">{{ 'Yes' if assignment.panel_law_firms_only else 'No' }}</strong>
+                                <input class="edit-mode" type="checkbox" name="panel_law_firms_only" {% if assignment.panel_law_firms_only %}checked{% endif %} style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Vendor Role <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ assignment.vendor_role }}</strong>
+                                <select class="edit-mode" name="vendor_role" style="display:none;" required>
+                                    <option value="">Select role...</option>
+                                    {% for role in roles %}
+                                    <option value="{{ role }}" {% if assignment.vendor_role == role %}selected{% endif %}>{{ role }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">GL Account Number <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ assignment.default_vendor_gl_account_number }}</strong>
+                                <select class="edit-mode" name="default_vendor_gl_account_number" style="display:none;" required>
+                                    <option value="">Select GL Account...</option>
+                                    {% for gl in gl_accounts %}
+                                    <option value="{{ gl }}" {% if assignment.default_vendor_gl_account_number == gl %}selected{% endif %}>{{ gl }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Fee Arrangement <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ assignment.fee_arrangement_value }}</strong>
+                                <select class="edit-mode" name="fee_arrangement_value" style="display:none;" required>
+                                    <option value="">Select fee arrangement...</option>
+                                    {% for fee in fee_arrangements %}
+                                    <option value="{{ fee }}" {% if assignment.fee_arrangement_value == fee %}selected{% endif %}>{{ fee }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Fixed Fee Amount</div>
+                            <div>
+                                <strong class="view-mode">{{ '%.2f'|format(assignment.syndicate_fixed_fee_amount) if assignment.syndicate_fixed_fee_amount else '-' }}</strong>
+                                <input class="edit-mode" type="number" step="0.01" name="syndicate_fixed_fee_amount" value="{{ assignment.syndicate_fixed_fee_amount or '' }}" style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Subcontractor?</div>
+                            <div>
+                                <strong class="view-mode">{{ 'Yes' if assignment.subcontractor else 'No' }}</strong>
+                                <input class="edit-mode" type="checkbox" name="subcontractor" {% if assignment.subcontractor %}checked{% endif %} style="display:none;">
+                            </div>
+                        </div>
+
+                        <!-- Shared Actions -->
+                        <div class="detail-actions">
+                            <button type="button" id="editBtn" onclick="enableEdit()">Edit</button>
+                            <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+                            <button type="submit" id="updateBtn" style="display:none;">Update</button>
+                        </div>
+                    </form>
+                </div> 
+
+                <!-- Matter Pane -->
+                <div role="tabpanel" class="tab-pane" id="matter-pane" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        <!-- We pass the single matter object wrapped in a list so the loop works perfectly -->
+                        {% with matters=[assignment.matter], grid_columns=matter_grid_columns %}
+                            {% include "matters/_grid.html" %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <!-- Vendor Pane -->
+                <div role="tabpanel" class="tab-pane" id="vendor-pane" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        <!-- We pass the single vendor object wrapped in a list so the loop works perfectly -->
+                        {% with vendors=[assignment.vendor], grid_columns=vendor_grid_columns %}
+                            {% include "vendors/_grid.html" %}
+                        {% endwith %}
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="invoices-pane" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        {% with invoices=vatm_invoices, grid_columns=invoice_grid_columns %}
+                            {% include "invoices/_grid.html" %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="detail-side">
+        <button class="btn btn-outline btn-block" data-modal-target="participant-modal" style="margin-bottom: 16px;">Add Participant</button> 
+        <button class="btn btn-primary btn-block" data-modal-target="create-invoice-modal" style="margin-bottom: 16px;">Add Invoice</button>
+
+        <section class="side-card">
+            <form method="POST" action="{{ url_for('vatms.post_comment', assignment_id=assignment.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <textarea name="comment_text" rows="3" placeholder="Post comment..." required></textarea>
+                <button class="btn btn-primary btn-block" type="submit">Post</button>
+            </form>
+        </section>
+
+        <section class="side-card">
+            <h3>Activity</h3>
+            <ul class="side-list">
+                {% for activity in assignment.activities|sort(attribute='created_at', reverse=True) %}
+                <li>{{ activity.description }}<span>{{ activity.created_at.strftime('%b %d, %Y %H:%M') }}</span></li>
+                {% else %}
+                <li class="empty">No Activity</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="side-card">
+            <h3>Participants</h3>
+            <ul class="side-list">
+                {% for participant in assignment.participants %}
+                <li>{{ participant.name }} &mdash; {{ participant.role }}<span>{{ participant.email }}</span></li>
+                {% else %}
+                <li class="empty">No participants yet.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </aside>
+</div>
+
+<!-- Add Participant Modal -->
+<div class="modal" id="participant-modal">
+    <div class="modal-card">
+        <div class="modal-head"><h2>Add Participant</h2><button class="icon-btn" data-modal-close>&times;</button></div>
+        <form method="POST" action="{{ url_for('vatms.add_participant', assignment_id=assignment.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field"><label for="p-name">Name</label><input id="p-name" name="name" required></div>
+            <div class="field"><label for="p-email">Email</label><input id="p-email" name="email" type="email" required></div>
+            <div class="field">
+                <label for="p-role">Role</label>
+                <select id="p-role" name="role" required>
+                    {% for value in participant_roles %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-light" type="button" data-modal-close>Cancel</button>
+                <button class="btn btn-primary" type="submit">Add Participant</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- At the bottom of vatms/detail.html -->
+{% set fixed_matter_id = assignment.matter.id %}
+{% set fixed_vendor_name = assignment.vendor.name %}
+{% with statuses=invoice_choices.statuses, matters=invoice_choices.matters, vendors=invoice_choices.vendors, currencies=invoice_choices.currencies %}
+    {% include "invoices/form.html" %}
+{% endwith %}
+{% include "vatms/form.html" %}
+{% endblock %}

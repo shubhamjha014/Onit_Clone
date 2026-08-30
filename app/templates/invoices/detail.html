@@ -1,31 +1,124 @@
 {% extends "base.html" %}
 {% block title %}Invoice {{ invoice.invoice_number }} &middot; {{ app_name }}{% endblock %}
+
 {% block content %}
 <div class="page-head">
     <h1>Invoice {{ invoice.invoice_number }}</h1>
     <a class="btn btn-light" href="{{ url_for('invoices.list_invoices') }}">Back to Invoices</a>
 </div>
+
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
+<section class="panel summary-panel">
+    <div class="summary-grid">
+        <div><span>Vendor</span><strong>{{ invoice.vendor_name }}</strong></div>
+        <div><span>Amount</span><strong>{{ '%.2f' | format(invoice.amount or 0) }} {{ invoice.currency }}</strong></div>
+        <div><span>Status</span><strong>{{ invoice.status }}</strong></div>
+        <div><span>Invoice Date</span><strong>{{ invoice.invoice_date.strftime('%m/%d/%y') if invoice.invoice_date else '-' }}</strong></div>
+        <div><span>Submitted</span><strong>{{ invoice.submitted_date.strftime('%m/%d/%y') if invoice.submitted_date else '-' }}</strong></div>
+    </div>
+</section>
+
 <div class="detail-layout">
-    <section class="panel detail-main">
-        <div class="detail-rows">
-            <div><span>Vendor</span><strong>{{ invoice.vendor_name }}</strong></div>
-            <div><span>Matter</span><strong>
-                {% if invoice.matter %}<a href="{{ url_for('matters.matter_detail', matter_id=invoice.matter_id) }}">{{ invoice.matter.matter_number }} &mdash; {{ invoice.matter.matter_name }}</a>{% else %}-{% endif %}
-            </strong></div>
-            <div><span>Invoice Date</span><strong>{{ invoice.invoice_date.strftime('%m/%d/%y') if invoice.invoice_date else '-' }}</strong></div>
-            <div><span>Amount</span><strong>{{ '%.2f' | format(invoice.amount or 0) }} {{ invoice.currency }}</strong></div>
-            <div><span>Submitted</span><strong>{{ invoice.submitted_date.strftime('%m/%d/%y') if invoice.submitted_date else '-' }}</strong></div>
-            <div><span>Description</span><strong>{{ invoice.description or '-' }}</strong></div>
-        </div>
-    </section>
+    <div class="detail-main">
+        <section class="panel">
+            
+            <div class="tab-navigation">
+                <ul class="nav-tabs" role="tablist">
+                    <li role="presentation"><a href="#details" role="tab" class="active">Details</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="details">
+                    <form method="POST" action="{{ url_for('invoices.update_invoice', invoice_id=invoice.id) }}" id="detailsForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="detail-rows">
+                            
+                            <div class="detail-label">Invoice Number <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ invoice.invoice_number }}</strong>
+                                <input class="edit-mode" type="text" name="invoice_number" value="{{ invoice.invoice_number }}" style="display:none;" required>
+                            </div>
+                            
+                            <div class="detail-label">Matter</div>
+                            <div>
+                                <strong class="view-mode">
+                                    {% if invoice.matter %}<a href="{{ url_for('matters.matter_detail', matter_id=invoice.matter_id) }}">{{ invoice.matter.matter_number }} &mdash; {{ invoice.matter.matter_name }}</a>{% else %}-{% endif %}
+                                </strong>
+                                <select class="edit-mode" name="matter_id" style="display:none;">
+                                    <option value="">Not linked to a matter</option>
+                                    {% for matter in matters %}
+                                    <option value="{{ matter.id }}" {% if invoice.matter_id == matter.id %}selected{% endif %}>{{ matter.matter_number }} &mdash; {{ matter.matter_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Vendor <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ invoice.vendor_name }}</strong>
+                                <input class="edit-mode" type="text" name="vendor_name" value="{{ invoice.vendor_name }}" style="display:none;" required>
+                            </div>
+                            
+                            <div class="detail-label">Amount <span class="req">*</span></div>
+                            <div>
+                                <strong class="view-mode">{{ '%.2f' | format(invoice.amount or 0) }}</strong>
+                                <input class="edit-mode" type="number" step="0.01" min="0" name="amount" value="{{ invoice.amount or '0' }}" style="display:none;" required>
+                            </div>
+                            
+                            <div class="detail-label">Currency</div>
+                            <div>
+                                <strong class="view-mode">{{ invoice.currency }}</strong>
+                                <select class="edit-mode" name="currency" style="display:none;">
+                                    {% for value in currencies %}
+                                        <option value="{{ value }}" {% if invoice.currency == value %}selected{% endif %}>{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="detail-label">Invoice Date</div>
+                            <div>
+                                <strong class="view-mode">{{ invoice.invoice_date.strftime('%m/%d/%y') if invoice.invoice_date else '-' }}</strong>
+                                <input class="edit-mode" type="date" name="invoice_date" value="{{ invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else '' }}" style="display:none;">
+                            </div>
+
+                            <div class="detail-label">Description</div>
+                            <div>
+                                <strong class="view-mode">{{ invoice.description or '-' }}</strong>
+                                <textarea class="edit-mode" name="description" style="display:none;">{{ invoice.description or '' }}</textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="detail-actions">
+                            <button type="button" id="editBtn" onclick="enableEdit()">Edit</button>
+                            <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+                            <button type="submit" id="updateBtn" style="display:none;">Update</button>
+                        </div>
+                    </form>
+                </div> 
+            </div> 
+        </section>
+    </div>
+
+    <!-- SIDEBAR -->
     <aside class="detail-side">
-        <section class="side-card">
+        <section class="side-card phase-card">
             <form method="POST" action="{{ url_for('invoices.change_status', invoice_id=invoice.id) }}" class="status-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <label for="status">Invoice Status</label>
-                <select id="status" name="status" onchange="this.form.submit()">
-                    {% for value in statuses %}<option value="{{ value }}" {% if value == invoice.status %}selected{% endif %}>{{ value }}</option>{% endfor %}
-                </select>
+                
+                <div class="phase-select-container">
+                    <div class="phase-select-text">
+                        <strong>Status:</strong> {{ invoice.status }}
+                    </div>
+                    
+                    <select id="status" name="status" onchange="this.form.submit()" class="phase-select">
+                        {% for value in statuses %}
+                            <option value="{{ value }}" {% if value == invoice.status %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </form>
         </section>
     </aside>

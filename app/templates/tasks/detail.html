@@ -6,16 +6,15 @@
     <a class="btn btn-light" href="{{ url_for('tasks.list_tasks') }}">Back to Tasks</a>
 </div>
 
+<!-- Master CSRF Token for embedded grid actions -->
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
 <section class="panel summary-panel">
     <div class="summary-grid">
         <div><span>Title</span><strong>{{ task.title }}</strong></div>
-
         <div><span>Assignee</span><strong>{{ task.assignee.name if task.assignee else '-' }}</strong></div>
-
         <div><span>Due Date</span><strong>{{ task.due_date.strftime('%m/%d/%y') if task.due_date else '-' }}</strong></div>
-
         <div><span>Priority</span><strong>{{ task.priority }}</strong></div>
-
         <div><span>Status</span><strong>{{ task.status }}</strong></div>
     </div>
 </section>
@@ -29,6 +28,9 @@
                 <ul class="nav-tabs" role="tablist">
                     <li role="presentation">
                         <a href="#details" role="tab" class="active">Details</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#matter-pane" role="tab">Matter ({{ 1 if task.matter else 0 }})</a>
                     </li>
                 </ul>
             </div>
@@ -49,13 +51,7 @@
                             </div>
                             <div>
                                 <strong class="view-mode">{{ task.title }}</strong>
-                                <input
-                                    class="edit-mode"
-                                    type="text"
-                                    name="title"
-                                    value="{{ task.title }}"
-                                    style="display:none;"
-                                >
+                                <input class="edit-mode" type="text" name="title" value="{{ task.title }}" style="display:none;" required>
                             </div>
 
                             <!-- Row 2 -->
@@ -64,13 +60,7 @@
                             </div>
                             <div>
                                 <strong class="view-mode">{{ task.matter_id or '-' }}</strong>
-                                <input
-                                    class="edit-mode"
-                                    type="text"
-                                    name="matter_id"
-                                    value="{{ task.matter_id or '' }}"
-                                    style="display:none;"
-                                >
+                                <input class="edit-mode" type="text" name="matter_id" value="{{ task.matter_id or '' }}" style="display:none;">
                             </div>
 
                             <!-- Row 3 -->
@@ -95,11 +85,7 @@
                             </div>
                             <div>
                                 <strong class="view-mode">{{ task.description or '-' }}</strong>
-                                <textarea
-                                    class="edit-mode"
-                                    name="description"
-                                    style="display:none;"
-                                >{{ task.description or '' }}</textarea>
+                                <textarea class="edit-mode" name="description" style="display:none;">{{ task.description or '' }}</textarea>
                             </div>
 
                             <!-- Row 5 -->
@@ -110,13 +96,7 @@
                                 <strong class="view-mode">
                                     {{ task.due_date.strftime('%m/%d/%y') if task.due_date else '-' }}
                                 </strong>
-                                <input
-                                    class="edit-mode"
-                                    type="date"
-                                    name="due_date"
-                                    value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}"
-                                    style="display:none;"
-                                >
+                                <input class="edit-mode" type="date" name="due_date" value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}" style="display:none;">
                             </div>
 
                             <!-- Row 6 -->
@@ -125,11 +105,7 @@
                             </div>
                             <div>
                                 <strong class="view-mode">{{ task.priority }}</strong>
-                                <select
-                                    class="edit-mode"
-                                    name="priority"
-                                    style="display:none;"
-                                >
+                                <select class="edit-mode" name="priority" style="display:none;">
                                     <option value="Low" {% if task.priority == 'Low' %}selected{% endif %}>Low</option>
                                     <option value="Medium" {% if task.priority == 'Medium' %}selected{% endif %}>Medium</option>
                                     <option value="High" {% if task.priority == 'High' %}selected{% endif %}>High</option>
@@ -142,11 +118,7 @@
                             </div>
                             <div>
                                 <strong class="view-mode">{{ task.status }}</strong>
-                                <select
-                                    class="edit-mode"
-                                    name="status"
-                                    style="display:none;"
-                                >
+                                <select class="edit-mode" name="status" style="display:none;">
                                     <option value="Open" {% if task.status == 'Open' %}selected{% endif %}>Open</option>
                                     <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>In Progress</option>
                                     <option value="Completed" {% if task.status == 'Completed' %}selected{% endif %}>Completed</option>
@@ -178,33 +150,23 @@
 
                         <!-- Bottom-right actions -->
                         <div class="detail-actions">
-                            <button
-                                type="button"
-                                id="editBtn"
-                                onclick="enableEdit()"
-                            >
-                                Edit
-                            </button>
-
-                            <button
-                                type="button"
-                                id="cancelBtn"
-                                onclick="cancelEdit()"
-                                style="display:none;"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="submit"
-                                id="updateBtn"
-                                style="display:none;"
-                            >
-                                Update
-                            </button>
+                            <button type="button" id="editBtn" onclick="enableEdit()">Edit</button>
+                            <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+                            <button type="submit" id="updateBtn" style="display:none;">Update</button>
                         </div>
                     </form>
                 </div> 
+
+                <!-- Matter Pane -->
+                <div role="tabpanel" class="tab-pane" id="matter-pane" style="display: none;">
+                    <div class="tab-embedded-grid">
+                        <!-- Gracefully handles tasks that might not have a matter assigned yet -->
+                        {% with matters=[task.matter] if task.matter else [], grid_columns=matter_grid_columns %}
+                            {% include "matters/_grid.html" %}
+                        {% endwith %}
+                    </div>
+                </div>
+
             </div> 
         </section>
     </div>
@@ -231,7 +193,7 @@
             </form>
         </section>
 
-        <button class="btn btn-outline btn-block" data-modal-target="participant-modal">Add Participant</button> 
+        <button class="btn btn-outline btn-block" data-modal-target="participant-modal" style="margin-bottom: 16px;">Add Participant</button> 
 
         <section class="side-card">
             <form method="POST" action="{{ url_for('tasks.post_comment', task_id=task.id) }}">
@@ -286,5 +248,4 @@
         </form>
     </div>
 </div>
-
 {% endblock %}

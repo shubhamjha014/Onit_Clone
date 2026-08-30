@@ -15,4 +15,10 @@
     <a class="nav-item {% if request.blueprint == 'tasks' %}active{% endif %}" href="{{ url_for('tasks.list_tasks') }}">
         <span class="nav-icon">&#9638;</span> Tasks
     </a>
+    <a class="nav-item {% if request.blueprint == 'vendors' %}active{% endif %}" href="{{ url_for('vendors.list_vendors') }}">
+        <span class="nav-icon">&#9638;</span> Vendors
+    </a>
+    <a class="nav-item {% if request.blueprint == 'vatms' %}active{% endif %}" href="{{ url_for('vatms.list_assignments') }}">
+        <span class="nav-icon">&#9638;</span> Vendor Assignment to Matter
+    </a>
 </aside>

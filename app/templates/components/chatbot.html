@@ -104,6 +104,46 @@
     .chat-message.bot .message-content { background: white; color: #333; border-top-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     .chat-message.user .message-content { background: #6554C0; color: white; border-top-right-radius: 2px; box-shadow: 0 2px 5px rgba(101,84,192,0.2); }
     .message-content p { margin: 0; }
+
+    .message-content.table-content {
+        max-width: 92%;
+        padding: 0;
+        overflow: hidden;
+        background: #ffffff;
+    }
+    .table-scroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 100%;
+        padding: 8px 8px 10px 8px;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .chat-table {
+        width: 100%;
+        min-width: 420px;
+        border-collapse: collapse;
+        font-size: 12px;
+        color: #1f2937;
+        background: white;
+    }
+    .chat-table th,
+    .chat-table td {
+        border: 1px solid #e5e7eb;
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .chat-table thead th {
+        background: #f3f4f6;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+    }
+    .chat-table tbody tr:nth-child(even) {
+        background: #fafafa;
+    }
     
     /* Typing Indicator Animation */
     .typing-content { background: transparent !important; box-shadow: none !important; opacity: 0.6; color: #6554C0 !important; font-style: italic; font-weight: 500; display: flex; align-items: center; gap: 4px; padding: 12px 4px !important; }
@@ -130,6 +170,7 @@
         const sendBtn = document.getElementById('chatbot-send');
         const messagesContainer = document.getElementById('chatbot-messages');
         const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+        let chatHistory = [];
 
         // Reusable HTML for the Zoomed Bot Avatar Image in chat
         const botAvatarHTML = `
@@ -148,14 +189,132 @@
             closeBtn.addEventListener('click', () => chatWindow.classList.add('hidden'));
         }
 
-        // Render Message HTML
+        function summarizeAssistantReply(reply) {
+            const text = String(reply || '').trim();
+            if (!text) return '';
+
+            const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            const tableLines = lines.filter(line => line.includes('|'));
+            if (tableLines.length >= 3) {
+                const header = tableLines[0].split('|').map(cell => cell.trim()).filter(Boolean);
+                const columns = header.slice(0, 6).filter(Boolean);
+                if (columns.length) {
+                    return `Displayed a table with columns: ${columns.join(', ')}.`;
+                }
+                return 'Displayed a table of results.';
+            }
+
+            return text.length > 180 ? text.slice(0, 180).trim() + '...' : text;
+        }
+
+        // Render message text or structured table output.
+        function parseMarkdownTable(rawText) {
+            const lines = rawText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            if (lines.length < 3) return null;
+
+            function splitPipeRow(line) {
+                return line.split('|').map(cell => cell.trim()).filter(Boolean);
+            }
+
+            function cleanHeaderCells(cells) {
+                let startIndex = 0;
+                while (startIndex < cells.length && cells[startIndex].length > 40) {
+                    startIndex++;
+                }
+
+                const trimmed = cells.slice(startIndex).filter(Boolean);
+                if (trimmed.length < 2) return null;
+
+                const valid = trimmed.filter(cell => cell.length <= 80 && /[A-Za-z0-9]/.test(cell));
+                return valid.length >= 2 ? valid : null;
+            }
+
+            function isSeparatorLine(line) {
+                if (!line.includes('|')) return false;
+                const cells = splitPipeRow(line);
+                if (cells.length < 2) return false;
+                return cells.every(cell => /^:?-{3,}:?$/.test(cell));
+            }
+
+            for (let i = 0; i < lines.length - 1; i++) {
+                if (!lines[i].includes('|')) continue;
+
+                const rawHeaderCells = splitPipeRow(lines[i]);
+                const headerCells = cleanHeaderCells(rawHeaderCells);
+                if (!headerCells) continue;
+
+                const separatorLine = lines[i + 1];
+                if (!isSeparatorLine(separatorLine)) continue;
+
+                const rows = [];
+                for (let j = i + 2; j < lines.length; j++) {
+                    const rowLine = lines[j];
+                    if (!rowLine.includes('|')) continue;
+                    const rowCells = splitPipeRow(rowLine);
+                    if (rowCells.length === headerCells.length) {
+                        rows.push(rowCells);
+                    }
+                }
+
+                if (rows.length) {
+                    return { columns: headerCells, rows };
+                }
+            }
+
+            return null;
+        }
+
+        function buildTableMarkup(tableData) {
+            const { columns, rows } = tableData;
+            const headerMarkup = columns.map(col => `<th>${col}</th>`).join('');
+            const rowMarkup = rows.map(row => {
+                const cells = row.map(cell => `<td>${cell}</td>`).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
+
+            return `
+                <div class="table-scroll">
+                    <table class="chat-table">
+                        <thead>
+                            <tr>${headerMarkup}</tr>
+                        </thead>
+                        <tbody>${rowMarkup}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderTextContent(text) {
+            const normalizedText = String(text)
+                .replace(/\r\n/g, '\n')
+                .replace(/\\n/g, '\n')
+                .replace(/\r/g, '\n');
+            return `<p>${normalizedText.replace(/\n/g, '<br>')}</p>`;
+        }
+
         function appendMessage(text, isUser) {
             const msgDiv = document.createElement('div');
             msgDiv.className = `chat-message ${isUser ? 'user' : 'bot'}`;
-            msgDiv.innerHTML = `
-                ${!isUser ? botAvatarHTML : ''}
-                <div class="message-content"><p>${text}</p></div>
-            `;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `message-content ${isUser ? '' : 'bot-content'}`;
+
+            if (!isUser) {
+                const tableData = parseMarkdownTable(text);
+                if (tableData) {
+                    contentDiv.classList.add('table-content');
+                    contentDiv.innerHTML = buildTableMarkup(tableData);
+                } else {
+                    contentDiv.innerHTML = renderTextContent(text);
+                }
+            } else {
+                contentDiv.innerHTML = renderTextContent(text);
+            }
+
+            if (!isUser) {
+                msgDiv.innerHTML = `${botAvatarHTML}`;
+            }
+            msgDiv.appendChild(contentDiv);
             messagesContainer.appendChild(msgDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -192,15 +351,25 @@
             // Show Typing Indicator
             showTyping();
 
+            // Keep only recent user prompts in memory. Do not carry raw assistant tables forward.
+            chatHistory.push({ role: 'user', content: text });
+            if (chatHistory.length > 4) {
+                chatHistory = chatHistory.slice(-4);
+            }
+
             // Fetch response from backend
             try {
                 const response = await fetch('{{ url_for("chat.process_message") }}', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: JSON.stringify({ message: text })
+                    body: JSON.stringify({
+                        message: text,
+                        history: chatHistory.slice(0, -1)
+                    })
                 });
 
                 hideTyping(); // Remove the indicator once response arrives
@@ -208,6 +377,12 @@
                 if (response.ok) {
                     const data = await response.json();
                     appendMessage(data.response, false);
+
+                    const summary = summarizeAssistantReply(data.response);
+                    chatHistory.push({ role: 'assistant', content: summary || data.response });
+                    if (chatHistory.length > 4) {
+                        chatHistory = chatHistory.slice(-4);
+                    }
                 } else {
                     appendMessage("Sorry, I encountered a network error.", false);
                 }
